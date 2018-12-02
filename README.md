@@ -4,7 +4,7 @@ battery-plus
 
 An enhanced battery status indicator for i3blocks.
 
-![](images/example.png)
+![](example.png)
 
 ## Installation
 
