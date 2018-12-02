@@ -2,7 +2,7 @@ battery-plus
 =========
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)][license]
 
-An enhanced battery status indicator for i3blocks.
+An enhanced battery status indicator for [i3blocks].
 
 ![](example.png)
 
@@ -10,6 +10,7 @@ An enhanced battery status indicator for i3blocks.
 
 #### Requirements
 * awk (POSIX compatible)
+* [i3blocks]
 * [upower]
 
 #### Optional
@@ -17,13 +18,8 @@ An enhanced battery status indicator for i3blocks.
 * [notify-osd], [dunst], or any [libnotify] compatible notification daemon
 * [zenity]
 
-#### Notifications
-Notifications are provided by [libnotify]. Any [libnotify] compatible notification daemon can be used for notifications by specifying it with the `-n` option or the `NOTIFY_PROGRAM` variable. The most common are provided by [notify-osd] and [dunst].
-
-Expiration time of notifications can be changed using the `-e <milliseconds>` option. Default is 1500 ms. (Ubuntu's Notify OSD and GNOME Shell both ignore the expiration parameter.)
-
 ### Guide
-Copy the blocklet configuration in the given `i3blocks.conf` into your i3blocks configuration file, the recommended config is:
+Copy the blocklet configuration in the given `i3blocks.conf` into your [i3blocks] configuration file, the recommended config is:
 
 ```INI
 [battery-plus]
@@ -73,9 +69,14 @@ interval=30
 
 Set the `instance` variable to your battery to monitor. If you want to monitor multiple batteries you will need to add this blocklet twice in your i3blocks.conf with different `instance` settings.
 
+#### Notifications
+Notifications are provided by [libnotify]. Any [libnotify] compatible notification daemon can be used for notifications by specifying it with the `-n` option or the `NOTIFY_PROGRAM` variable. The most common are provided by [notify-osd] and [dunst].
+
+Expiration time of notifications can be changed using the `-e <milliseconds>` option. Default is 1500 ms. (Ubuntu's Notify OSD and GNOME Shell both ignore the expiration parameter.)
+
 ## Customization
 
-Designed to be fully customizable. The following can be set in your i3blocks.conf in newer versions if i3blocks, in older versions of i3blocks (<= 1.4-4) you can customize using the program options. The following are configurable:
+Designed to be fully customizable. The following can be set in your i3blocks.conf in newer versions if [i3blocks], in older versions (<= 1.4-4) you can customize using the program options. The following are configurable:
 
 Variable | Type | Description
 ------------ | ------------- | -------------
@@ -125,6 +126,7 @@ _NOTIFY_THROTTLE | integer | Minimum time in seconds between notifications to pr
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 
 [dunst]: https://dunst-project.org
+[i3blocks]: https://vivien.github.io/i3blocks/
 [i3wm]: https://i3wm.org
 [libnotify]: https://developer.gnome.org/libnotify
 [license]: https://www.gnu.org/licenses/gpl-2.0.en.html
