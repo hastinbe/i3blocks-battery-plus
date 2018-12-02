@@ -75,7 +75,7 @@ Set the `instance` variable to your battery to monitor. If you want to monitor m
 
 ## Customization
 
-Designed to be fully customizable. The following can be set in your i3blocks.conf in newer versions if i3blocks, in older versions of i3blocks (<= 1.4-4) you will need to modify the default value of the variable in the script. The following are configurable:
+Designed to be fully customizable. The following can be set in your i3blocks.conf in newer versions if i3blocks, in older versions of i3blocks (<= 1.4-4) you can customize using the program options. The following are configurable:
 
 Variable | Type | Description
 ------------ | ------------- | -------------
