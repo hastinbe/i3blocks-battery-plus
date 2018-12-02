@@ -20,7 +20,7 @@ An enhanced battery status indicator for i3blocks.
 #### Notifications
 Notifications are provided by [libnotify]. Any [libnotify] compatible notification daemon can be used for notifications by specifying it with the `-n` option or the `NOTIFY_PROGRAM` variable. The most common are provided by [notify-osd] and [dunst].
 
-Expiration time of notifications can be changed using the `-t <milliseconds>` option. Default is 1500 ms. (Ubuntu's Notify OSD and GNOME Shell both ignore the expiration parameter.)
+Expiration time of notifications can be changed using the `-e <milliseconds>` option. Default is 1500 ms. (Ubuntu's Notify OSD and GNOME Shell both ignore the expiration parameter.)
 
 ### Guide
 Copy the blocklet configuration in the given `i3blocks.conf` into your i3blocks configuration file, the recommended config is:
@@ -51,7 +51,7 @@ _COLOR_ERROR | string | Color of the battery error symbol
 _COLOR_BATTERY | string | Color of the battery symbol
 _COLOR_ALERT | string | Color of the alert symbol
 _COLOR_DIRECTIONAL_UP | string | Color of the battery charge increasing indicator
-_COLOR_DIRECTIONAL_DOW | string | Color of the battery charge decreasing indicator
+_COLOR_DIRECTIONAL_DOWN | string | Color of the battery charge decreasing indicator
 _SYMBOL_FULLY_CHARGED | string | Symbol to indicate battery is fully charged
 _SYMBOL_CHARGING | string | Symbol to indicate the battery is charging
 _SYMBOL_DISCHARGING | string | Symbol to indicate the battery is discharging
@@ -67,7 +67,7 @@ _SYMBOL_BATT_0 | string | Symbol for a battery with no/low charge
 _SYMBOL_DIRECTION_UP | string | Symbol to indicate battery charge is increasing
 _SYMBOL_DIRECTION_DOWN | string | Symbol to indicate battery charge is decreasing
 _USE_BATT_GRADIENT | boolean | Use a color gradient for the battery symbol based on the % of charge
-_SYMBOLS_ONLY | boolean | Display on symbols, no text
+_SYMBOLS_ONLY | boolean | Display only symbols, no text
 _HIDE_IF_CHARGED | boolean | Hide the indicator if the battery is fully-charged
 _HIDE_PERCENTAGE | boolean | Hide the battery percentage
 _HIDE_TIME_REMAINING | boolean | Hide the battery time remaining
