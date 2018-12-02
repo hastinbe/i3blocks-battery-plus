@@ -1,0 +1,638 @@
+#!/usr/bin/env bash
+#
+#  battery-plus
+#
+#  An enhanced battery status indicator for i3blocks.
+#
+#  Requires:
+#    awk (POSIX compatible)
+#    upower
+#
+#  Optional:
+#    fonts-font-awesome
+#    notify-send or dunstify -- for notifications
+#    zenity -- for dialogs
+#
+#  Copyright (c) 2018 Beau Hastings. All rights reserved.
+#  License: GNU General Public License v2
+#
+#  Author: Beau Hastings <beausy@gmail.com>
+#  URL: https://github.com/hastinbe/i3blocks-battery-plus
+
+_FONT=${_FONT:-"FontAwesome"}
+_PERCENT="&#x25;"
+
+# Hide the battery status if fully-charged,
+_HIDE_IF_CHARGED=${_HIDE_IF_CHARGED:-false}
+
+# Color the battery symbol using gradient.
+_USE_BATT_GRADIENT=${_USE_BATT_GRADIENT:-false}
+
+# Only show symbols.
+_SYMBOLS_ONLY=${_SYMBOLS_ONLY:-false}
+
+# Hide the battery percentage
+_HIDE_PERCENTAGE=${_HIDE_PERCENTAGE:-false}
+
+# Hide the battery time remaining
+_HIDE_TIME_REMAINING=${_HIDE_TIME_REMAINING:-true}
+
+# Hide the time to charge the battery to full
+_HIDE_TIME_TO_FULL=${_HIDE_TIME_TO_FULL:-true}
+
+# Show the direction of change for the battery's percentage
+_SHOW_CHARGE_DIRECTION=${_SHOW_CHARGE_DIRECTION:-true}
+
+# Show an alert symbol when the battery capacity drops to the given percent (0=disable).
+_CAPACITY_ALERT=${_CAPACITY_ALERT:-75}
+
+# Action to take when the battery level reaches critical.
+_CRITICAL_ACTION=${_CRITICAL_ACTION:-"notify"}
+
+# Action to take when the battery level reaches low.
+_LOW_ACTION=${_LOW_ACTION:-"notify"}
+
+# Method to use for notifications
+_NOTIFY_PROGRAM=${_NOTIFY_PROGRAM:-"notify-send"}
+
+# The duration, in milliseconds, for the notification to appear on screen.
+_NOTIFY_EXPIRES="1500"
+
+# Minimum time in seconds between notifications to prevent spam.
+_NOTIFY_THROTTLE=${_NOTIFY_THROTTLE:-120}
+
+# Colors
+_COLOR_FULLY_CHARGED=${_COLOR_FULLY_CHARGED:-""}
+_COLOR_CHARGING=${_COLOR_CHARGING:-"yellow"}
+_COLOR_DISCHARGING=${_COLOR_CHARGING:-"yellow"}
+_COLOR_PENDING=${_COLOR_PENDING:-"blue"}
+_COLOR_ERROR=${_COLOR_ERROR:-"red"}
+_COLOR_BATTERY=${_COLOR_BATTERY:-"white"}
+_COLOR_ALERT=${_COLOR_ALERT:-"orange"}
+_COLOR_DIRECTIONAL_UP=${_COLOR_DIRECTIONAL_UP:-"green"}
+_COLOR_DIRECTIONAL_DOWN=${_COLOR_DIRECTIONAL_DOWN:-"red"}
+
+# Symbols
+_SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
+_SYMBOL_CHARGING=${_SYMBOL_CHARGING:-"&#xf0e7;"}
+_SYMBOL_DISCHARGING=${_SYMBOL_DISCHARGING:-""}
+_SYMBOL_UNKNOWN=${_SYMBOL_UNKNOWN:-"&#xf128;"}
+_SYMBOL_PENDING=${_SYMBOL_PENDING:-"&#xf254;"}
+_SYMBOL_ERROR=${_SYMBOL_ERROR:-"&#xf00d;"}
+_SYMBOL_ALERT=${_SYMBOL_ALERT:-"&#xf071;"}
+_SYMBOL_BATT_100=${_SYMBOL_BATT_100:-"&#xf240;"}
+_SYMBOL_BATT_75=${_SYMBOL_BATT_75:-"&#xf241;"}
+_SYMBOL_BATT_50=${_SYMBOL_BATT_50:-"&#xf242;"}
+_SYMBOL_BATT_25=${_SYMBOL_BATT_25:-"&#xf243;"}
+_SYMBOL_BATT_0=${_SYMBOL_BATT_0:-"&#xf244;"}
+_SYMBOL_DIRECTION_UP=${_SYMBOL_DIRECTION_UP:-"&#8593;"}
+_SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"&#8595;"}
+
+# Get a the system's temporary files directory.
+#
+# Notes:
+#   Executes a dry-run so we don't create a file.
+#   Linux doesn't require the template option, but MacOSX does.
+#
+# Returns:
+#   The path to the temporary directory.
+get_temp_dir() {
+    echo $(dirname $(mktemp -ut "battery-plus.XXX"))
+}
+
+# Output text wrapped in a span element.
+#
+# Options:
+#   -c <color>  To specify a text color.
+#
+# Arguments:
+#   $text  (string)  The text of the span element.
+#
+# Returns:
+#   The input wrapped in a span.
+span() {
+    if [ "$1" = "-c" ]; then
+        local color="$2"
+        local text="${*:3}"
+
+        if [ -n "$color" ] && [ -n "$text" ]; then
+            echo "<span color='${color}' font='${_FONT}'>${text}</span>"
+        fi
+    else
+        local text="$*"
+
+        if [ -n "$text" ]; then
+            echo "<span font='${_FONT}'>${text}</span>"
+        fi
+    fi
+}
+
+# Get battery status.
+#
+# Returns:
+#   The battery's status or state.
+get_battery_status() {
+    echo "$__UPOWER_INFO" | awk -W posix '$1 == "state:" {print $2}'
+}
+
+# Get battery warning level.
+#
+# Returns:
+#   The battery's warning level.
+get_battery_warning_level() {
+    echo "$__UPOWER_INFO" | awk -W posix '$1 == "warning-level:" {print $2}'
+}
+
+# Get battery percentage.
+#
+# Returns:
+#   The battery's percentage, without the %.
+get_battery_percent() {
+    echo "$__UPOWER_INFO" | awk -W posix '$1 == "percentage:" { gsub("%","",$2); print $2}'
+}
+
+# Get battery capacity.
+#
+# Returns:
+#   The battery's capcity, without the %.
+get_battery_capacity() {
+    echo "$__UPOWER_INFO" | awk -W posix '$1 == "capacity:" { gsub("%","",$2); print $2}'
+}
+
+# Get battery time left.
+#
+# Returns:
+#   The battery's time left.
+get_time_to_empty() {
+    echo "$__UPOWER_INFO" | awk -W posix -F':' '/time to empty:/{print $2}' | xargs
+}
+
+# Get the time remaining until the battery is fully charged.
+#
+# Returns:
+#   The time remaining until battery is fully charged.
+get_time_to_full() {
+    echo "$__UPOWER_INFO" | awk -W posix -F':' '/time to full:/{print $2}' | xargs
+}
+
+# Get symbol for the given battery percentage.
+#
+# Arguments:
+#   $percent  (int)  Battery percentage.
+#
+# Returns:
+#  The battery symbol.
+get_battery_charge_symbol() {
+    local percent="$1"
+    local symbol
+
+    if [ "$battery_percentage" -ge 90 ]; then symbol="$_SYMBOL_BATT_100"
+    elif [ "$battery_percentage" -ge 70 ]; then symbol="$_SYMBOL_BATT_75"
+    elif [ "$battery_percentage" -ge 40 ]; then symbol="$_SYMBOL_BATT_50"
+    elif [ "$battery_percentage" -ge 20 ]; then symbol="$_SYMBOL_BATT_25"
+    else symbol="$_SYMBOL_BATT_0"
+    fi
+
+    echo "$symbol"
+}
+
+# Get battery status symbol.
+#
+# Returns:
+#   An symbol name, following the Symbol Naming Specification
+get_battery_status_symbol() {
+    echo "$__UPOWER_INFO" | awk -W posix '$1 == "symbol-name:" {print $2}'
+}
+
+# Get color for the given battery percentage.
+#
+# Arguments:
+#   $percent  (int)  Battery percentage.
+#
+# Returns:
+#   The color to use for the given battery percentage.
+get_percentage_color() {
+    local -i percent="$1"
+
+    # From red to green
+    if [ -z "$percent" ]; then color="#FFFFFF";
+    elif [ "$percent" -lt 10 ]; then color="#FF0000";
+    elif [ "$percent" -lt 20 ]; then color="#FF4000";
+    elif [ "$percent" -lt 30 ]; then color="#FF8000";
+    elif [ "$percent" -lt 40 ]; then color="#FFC000";
+    elif [ "$percent" -lt 50 ]; then color="#FFFF00";
+    elif [ "$percent" -lt 60 ]; then color="#BFFF00";
+    elif [ "$percent" -lt 70 ]; then color="#7FFF00";
+    elif [ "$percent" -lt 80 ]; then color="#3FFF00";
+    else
+        color="#00FF00"
+    fi
+
+    echo "${color}"
+}
+
+# Determines whether or not we can send a notification.
+#
+# Returns:
+#   0 on false, 1 on true.
+can_notify() {
+    local -i now=$(date +"%s")
+    local -i last=$(get_last_notify_time)
+
+    if [ -z "$last" ]; then return 0; fi
+
+    local -i diff=$(($now - $last))
+
+    [ $diff -gt $_NOTIFY_THROTTLE ]
+}
+
+# Get the last time we sent a notification.
+#
+# Returns:
+#   Time in seconds since the Epoch.
+get_last_notify_time() {
+    if [ -f "$TMP_NOTIFY" ]; then
+        echo $(stat -c '%Y' "$TMP_NOTIFY")
+    fi
+}
+
+# Save the last time we sent a notification.
+save_last_notify_time() {
+    touch -m "$TMP_NOTIFY"
+}
+
+# Display the charging indicator.
+#
+# Returns:
+#   The charging indicator.
+display_batt_charging() {
+    if [ -n "$_SYMBOL_CHARGING" ]; then
+        echo -n "$(span -c "${_COLOR_CHARGING}" "$_SYMBOL_CHARGING") "
+    fi
+
+    echo "$colored_battery_symbol"
+}
+
+# Display the discharging indicator.
+#
+# Returns:
+#   The discharging indicator.
+display_batt_discharging() {
+    if [ -n "$_SYMBOL_DISCHARGING" ]; then
+        echo -n "$(span -c "${_COLOR_DISCHARGING}" "$_SYMBOL_DISCHARGING") "
+    fi
+
+    echo "$battery_charge_symbol"
+}
+
+# Display the pending charge indicator.
+#
+# Returns:
+#   The pending charge indicator.
+display_batt_pending_charge() {
+    if [ -n "$_SYMBOL_PENDING" ]; then
+       echo -n "$(span -c "${_COLOR_PENDING}" "$_SYMBOL_PENDING") "
+    fi
+
+    if [ -n "$_SYMBOL_CHARGING" ]; then
+        echo -n "$(span -c "${_COLOR_CHARGING}" "$_SYMBOL_CHARGING") "
+    fi
+
+    echo "${battery_charge_symbol}"
+}
+
+# Display the pending discharge indicator.
+#
+# Returns:
+#   The pending discharge indicator.
+display_batt_pending_discharge() {
+    if [ -n "$_SYMBOL_PENDING" ]; then
+        echo -n "$(span -c "${_COLOR_PENDING}" "$_SYMBOL_PENDING") "
+    fi
+
+    if [ -n "$_SYMBOL_DISCHARGING" ]; then
+        echo -n "$(span -c "${_COLOR_DISCHARGING}" "$_SYMBOL_DISCHARGING") "
+    fi
+
+    echo "$colored_battery_symbol"
+}
+
+# Display the empty battery indicator.
+#
+# Returns:
+#   The empty battery indicator.
+display_batt_empty() {
+    echo "$battery_charge_symbol"
+}
+
+# Display the fully charged indicator.
+#
+# Returns:
+#   The fully-charged indicator.
+display_batt_fully_charged() {
+   if [ -n "$_SYMBOL_FULLY_CHARGED" ]; then
+        echo -n "$(span -c "${_COLOR_FULLY_CHARGED}" "$_SYMBOL_FULLY_CHARGED") "
+    fi
+
+    echo "$battery_charge_symbol"
+}
+
+# Display the unknown battery indicator.
+#
+# Returns:
+#   The unknonw battery indicator.
+display_batt_unknown() {
+    if [ -n "$_SYMBOL_UNKNOWN" ]; then
+        echo -n "$(span "$_SYMBOL_UNKNOWN") "
+    fi
+
+    echo "$(get_battery_charge_symbol 0)"
+}
+
+# Display the battery error indicator.
+#
+# Returns:
+#   The battery error indicator.
+display_batt_error() {
+    echo "$(span -c "${_COLOR_ERROR}" "$_SYMBOL_ERROR" "$_SYMBOL_BATT_0")"
+}
+
+# Display the battery percentage.
+#
+# Returns:
+#   The battery percentage, or nothing if disabled.
+display_percentage() {
+    if ! [ $_SYMBOLS_ONLY = true -o $_HIDE_PERCENTAGE = true ]; then
+        echo -n " $(span -c "${percentage_color}" "${battery_percentage:---}${_PERCENT}")"
+
+        if [ "$status" = "charging" ] && $_SHOW_CHARGE_DIRECTION; then
+            echo -n "$(span -c "${_COLOR_DIRECTIONAL_UP}" "${_SYMBOL_DIRECTION_UP}")"
+        elif [ "$status" = "discharging" ] && $_SHOW_CHARGE_DIRECTION; then
+            echo -n "$(span -c "${_COLOR_DIRECTIONAL_DOWN}" "${_SYMBOL_DIRECTION_DOWN}")"
+        fi
+
+        echo
+    fi
+}
+
+# Display the battery time remaining.
+#
+# Arguments:
+#   $force  (bool) Force display.
+#
+# Returns:
+#   The time remaining, or nothing if disabled.
+display_time_remaining() {
+    local force=${1:-false}
+
+    if [ $force = true ] || ! [ $_SYMBOLS_ONLY = true -o $_HIDE_TIME_REMAINING = true ]; then
+        time_to_empty=$(get_time_to_empty "$battery_info")
+        if [ -n "$time_to_empty" ]; then
+            echo "$time_to_empty"
+        fi
+    fi
+}
+
+# Display the battery time to fully charge.
+#
+# Arguments:
+#   $force  (bool) Force display.
+# Returns:
+#   The time to fully charge, or nothing if disabled.
+display_time_to_full() {
+    local force=${1:-false}
+
+    if [ $force = true ] || ! [ $_SYMBOLS_ONLY = true -o $_HIDE_TIME_TO_FULL = true ]; then
+        time_to_full=$(get_time_to_full "$battery_info")
+        if [ -n "$time_to_full" ]; then
+            echo "$time_to_full"
+        fi
+    fi
+}
+
+# Displays an array of segments.
+#
+# Arguments:
+#   $segments  (array)  The an array of segments.
+#
+# Returns:
+#   Each segment after another, followed by a newline.
+display_segments() {
+    local -a segments="$@"
+
+    for segment in "${segments[@]}"; do
+        if [ -n "$segment" ]; then
+            echo -n "$segment"
+        fi
+    done
+
+    echo
+}
+
+# Colors text using either the first or second color.
+#
+# Arguments:
+#   $text         (string)  Text to color.
+#   $first_color  (string)  The first color.
+#   $second_color (string)  The second color.
+#   $toggle       (bool)    Toggle that switches between colors.
+#
+# Returns:
+#   The colored text.
+multicolor() {
+    local text="$1"
+    local first_color="$2"
+    local second_color="$3"
+    local toggle=$4
+    local color="$first_color"
+
+    if $toggle && [ -n "$second_color" ]; then
+        color="$second_color"
+    fi
+
+    if [ -n "$color" ]; then
+        echo "$(span -c "$color" "$text")"
+    else
+        echo "$(span "$text")"
+    fi
+}
+
+# Display a notification.
+#
+# Arguments:
+#   $text  (string)  The notification text.
+#   $symbol  (string)  Name of an symbol.
+#   $type  (string)  The type of notification.
+#   $force (string)  Force the notification, ignoring any throttle.
+#   $rest  (string)  Any additional options to pass to the command.
+notify() {
+    local text="$1"
+    local symbol="$2"
+    local type="$3"
+    local force="$4"
+    local rest="${@:5}"
+    local command
+
+    if [ -z "$text" ] || ! $force && ! $(can_notify); then return; fi
+
+    if [ "$_NOTIFY_PROGRAM" = "dunstify" ]; then
+        command="dunstify -r 1001"
+    elif [ "$_NOTIFY_PROGRAM" = "notify-send" ]; then
+        command="notify-send"
+    fi
+
+    if [ -n "$_NOTIFY_EXPIRES" ]; then command="$command -t $_NOTIFY_EXPIRES"; fi
+    if [ -n "$symbol" ]; then command="$command -i $symbol"; fi
+    if [ -n "$type" ]; then command="$command -u $type"; fi
+
+    command="$command $rest \"$text\""
+    if eval $command; then
+        save_last_notify_time
+    fi
+}
+
+# Display a dialog.
+#
+# Arguments:
+#   $text  (string)  The dialog text.
+#   $symbol  (string)  Name of an symbol.
+#   $type  (string)  The type of dialog.
+#   $rest  (string)  Any additional options to pass to the command.
+dialog() {
+    local text="$1"
+    local symbol="$2"
+    local type="$3"
+    local rest="${@:4}"
+
+    if [ -z "$text" ]; then
+        return
+    fi
+
+    command="zenity"
+
+    if [ -n "$symbol" ]; then command="$command --symbol-name=\"$symbol\""; fi
+    if [ -n "$type" ]; then command="$command --${type}"; fi
+
+    command="$command --text=\"$text\" $rest"
+    eval $command
+}
+
+# Display program usage.
+usage() {
+    echo -e "Usage: $0 [options]
+Display the battery status using upower for i3blocks.\n
+Options:
+  -c <capacity>\tset battery capacity alert percentage (0=disable)
+  -n <program>\ta libnotify compatible notification program
+  -t <expires>\texpiration time of notifications, in milliseconds (Ubuntu's Notify OSD and GNOME Shell both ignore this parameter.)
+  -G\t\tcolor the battery symbol according to battery percentage
+  -I\t\tonly display symbols
+  -N\t\tsuppress displaying battery status if fully charged
+  -h\t\tdisplay this help and exit
+" 1>&2
+    exit 1
+}
+
+###############################################################################
+
+declare -a long_segments
+declare -a short_segments
+
+__UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BLOCK_INSTANCE:-BAT0}")
+TMP_NOTIFY="$(get_temp_dir)/battery-plus.last_notify"
+
+while getopts "c:hn:t:GHI" o; do
+    case "$o" in
+        c) _CAPACITY_ALERT="${OPTARG}" ;;
+        n) _NOTIFY_PROGRAM="${OPTARG}" ;;
+        t) _NOTIFY_EXPIRES="${OPTARG}" ;;
+        G) _USE_BATT_GRADIENT=true ;;
+        H) _HIDE_IF_CHARGED=true ;;
+        I) _SYMBOLS_ONLY=true ;;
+        h | *) usage ;;
+    esac
+done
+shift $((OPTIND-1)) # Shift off options and optional --
+
+battery_percentage=$(get_battery_percent)
+percentage_color=$(get_percentage_color "$battery_percentage")
+capacity=$(get_battery_capacity)
+battery_charge_symbol=$(get_battery_charge_symbol "$battery_percentage")
+battery_status_symbol=$(get_battery_status_symbol)
+colored_battery_symbol=$(multicolor "$battery_charge_symbol" "$_COLOR_BATTERY" "$percentage_color" $_USE_BATT_GRADIENT)
+warning_level=$(get_battery_warning_level)
+
+# Handle battery warning levels
+case "$warning_level" in
+    critical)
+        case "$_CRITICAL_ACTION" in
+            notify) $(notify "$(span "Your battery level is ${warning_level}!")" "$battery_status_symbol" "critical" false "-c device") ;;
+        esac
+        ;;
+    low)
+        case "$_LOW_ACTION" in
+            notify) $(notify "$(span "Your battery level is ${warning_level}")" "$battery_status_symbol" "normal" false "-c device") ;;
+        esac
+        ;;
+esac
+
+# Displayable alerts
+if [ "$_CAPACITY_ALERT" -gt 0 ] && [ "${capacity%.*}" -le $_CAPACITY_ALERT ]; then
+    CAPACITY_TRIGGERED=true
+    long_segments+=( "$(span -c "$_COLOR_ALERT" "$_SYMBOL_ALERT") " )
+fi
+
+# Battery statuses
+status=$(get_battery_status)
+case "$status" in
+    charging)           long_segments+=( "$(display_batt_charging)" ) ;;
+    discharging)        long_segments+=( "$(display_batt_discharging)" ) ;;
+    empty)              long_segments+=( "$(display_batt_empty)" ) ;;
+    fully-charged)
+        if $_HIDE_IF_CHARGED; then
+            exit 0
+        fi
+        long_segments+=( "$(display_batt_fully_charged)" )
+        ;;
+    pending-charge)     long_segments+=( "$(display_batt_pending_charge)" ) ;;
+    pending-discharge)  long_segments+=( "$(display_batt_pending_discharge)" ) ;;
+    unknown)            long_segments+=( "$(display_batt_unknown)" ) ;;
+    *)                  long_segments+=( "$(display_batt_error)" ) ;;
+esac
+
+# Since long_segments contains no text at this point, lets use it for the short_text
+short_segments=( "${long_segments[@]}" )
+
+# Append all text segments
+long_segments+=( "$(display_percentage)" )
+if [ -n "$(display_time_remaining)" ]; then
+    long_segments+=( "($(display_time_remaining))" )
+fi
+if [ -n "$(display_time_to_full)" ]; then
+    long_segments+=( "($(display_time_to_full))" )
+fi
+
+# Display the block long_text
+display_segments ${long_segments[@]}
+
+# Display the block short_text
+display_segments ${short_segments[@]}
+
+# Handle click events
+case $BLOCK_BUTTON in
+    1)
+        if [ -n "$CAPACITY_TRIGGERED" ]; then
+            $(dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap")
+        else
+            if [ "$status" = "discharging" ]; then
+                $(notify "$(span "$(display_time_remaining true) remaining")" "alarm-symbolic" "normal" true "-c device")
+            elif [ "$status" = "charging" ]; then
+                $(notify "$(span "$(display_time_to_full true) until fully charged")" "alarm-symbolic" "normal" true "-c device")
+            fi
+        fi
+        ;;
+esac
+
+if [ -n "$battery_percentage" ] && [ "$battery_percentage" -le 5 ]; then
+    exit 33
+fi
