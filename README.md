@@ -90,7 +90,7 @@ _COLOR_BATTERY | string | Color of the battery symbol
 _COLOR_ALERT | string | Color of the alert symbol
 _COLOR_DIRECTIONAL_UP | string | Color of the battery charge increasing indicator
 _COLOR_DIRECTIONAL_DOWN | string | Color of the battery charge decreasing indicator
-_SYMBOL_FULLY_CHARGED | string | Symbol to indicate battery is fully charged
+_SYMBOL_FULLY_CHARGED | string | Symbol to indicate battery is fully-charged
 _SYMBOL_CHARGING | string | Symbol to indicate the battery is charging
 _SYMBOL_DISCHARGING | string | Symbol to indicate the battery is discharging
 _SYMBOL_UNKNOWN | string | Symbol to indicate the battery state is unknown

@@ -523,13 +523,45 @@ usage() {
     echo -e "Usage: $0 [options]
 Display the battery status using upower for i3blocks.\n
 Options:
-  -c <capacity>\tset battery capacity alert percentage (0=disable)
-  -n <program>\ta libnotify compatible notification program
-  -t <expires>\texpiration time of notifications, in milliseconds (Ubuntu's Notify OSD and GNOME Shell both ignore this parameter.)
-  -G\t\tcolor the battery symbol according to battery percentage
-  -I\t\tonly display symbols
-  -N\t\tsuppress displaying battery status if fully charged
-  -h\t\tdisplay this help and exit
+  -a <none|notify>\taction to take when battery is low
+  -A <color>\t\tcolor of the alert symbol
+  -B <color>\t\tcolor of the battery symbol
+  -c <capacity>\t\tset battery capacity alert percentage (0=disable)
+  -C <color>\t\tcolor of the charging symbol
+  -d\t\t\tshow the direction of change for the battery's percentage
+  -D <color>\t\tcolor of the discharging symbol
+  -e <millseconds>\texpiration time of notifications (Ubuntu's Notify OSD and GNOME Shell both ignore this parameter.)
+  -E <color>\t\tcolor of the battery error symbol
+  -f <font>\t\tfont for text and symbols
+  -F <color>\t\tcolor of the fully-charged symbol
+  -G\t\t\tcolor the battery symbol according to battery percentage
+  -h\t\t\tdisplay this help and exit
+  -H\t\t\tsuppress displaying if battery is fully-charged
+  -I\t\t\tonly display symbols
+  -J <symbol>\t\tsymbol for a battery 100% charged
+  -k\t\t\thide the battery percentage
+  -K <symbol>\t\tsymbol for a battery 75% charged
+  -l <none|notify>\taction to take when the battery level reaches critical
+  -L <symbol>\t\tsymbol to indicate there is an alert
+  -M <symbol>\t\tsymbol for a battery 50% charged
+  -n <program>\t\ta libnotify compatible notification program
+  -N <color>\t\tcolor of the battery charge decreasing indicator
+  -O <symbol>\t\tsymbol for a battery with no/low charge
+  -p <symbol>\t\tsymbol to use for the percent sign
+  -P <color>\t\tcolor of the pending charge symbol
+  -Q <symbol>\t\tsymbol for a battery 25% charged
+  -r\t\t\thide the battery time remaining
+  -R <symbol>\t\tsymbol to indicate the battery state is undefined
+  -S <symbol>\t\tsymbol to indicate battery is fully charged
+  -t <seconds>\t\tminimum time in seconds between notifications to prevent spam
+  -T <symbol>\t\tsymbol to indicate the battery is charging
+  -u\t\t\thide the time to charge the battery to full
+  -U <color>\t\tcolor of the battery charge increasing indicator
+  -V <symbol>\t\tsymbol to indicate the battery state is unknown
+  -W <symbol>\t\tsymbol to indicate battery charge is increasing
+  -X <symbol>\t\tsymbol to indicate the battery state is pending
+  -Y <symbol>\t\tsymbol to indicate the battery is discharging
+  -Z <symbol>\t\tsymbol to indicate battery charge is decreasing
 " 1>&2
     exit 1
 }
