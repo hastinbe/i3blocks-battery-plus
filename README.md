@@ -10,6 +10,7 @@ An enhanced battery status indicator for [i3blocks].
 
 #### Requirements
 * awk (POSIX compatible)
+* bc
 * [i3blocks]
 * [upower]
 
@@ -51,6 +52,8 @@ interval=30
 #_COLOR_ALERT=orange
 #_COLOR_DIRECTIONAL_UP=green
 #_COLOR_DIRECTIONAL_DOWN=red
+#_COLOR_GRADIENT_START=#0000FF
+#_COLOR_GRADIENT_END=#FF0000
 #_SYMBOL_FULLY_CHARGED=
 #_SYMBOL_CHARGING=&#xf0e7;
 #_SYMBOL_DISCHARGING=

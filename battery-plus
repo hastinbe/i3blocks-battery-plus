@@ -6,6 +6,7 @@
 #
 #  Requires:
 #    awk (POSIX compatible)
+#    bc
 #    upower
 #
 #  Optional:
@@ -71,6 +72,8 @@ _COLOR_BATTERY=${_COLOR_BATTERY:-"white"}
 _COLOR_ALERT=${_COLOR_ALERT:-"orange"}
 _COLOR_DIRECTIONAL_UP=${_COLOR_DIRECTIONAL_UP:-"green"}
 _COLOR_DIRECTIONAL_DOWN=${_COLOR_DIRECTIONAL_DOWN:-"red"}
+_COLOR_GRADIENT_START=${_COLOR_GRADIENT_START:-"#FF0000"}
+_COLOR_GRADIENT_END=${_COLOR_GRADIENT_END:-"#00FF00"}
 
 # Symbols
 _SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
@@ -100,31 +103,131 @@ get_temp_dir() {
     echo $(dirname $(mktemp -ut "battery-plus.XXX"))
 }
 
-# Output text wrapped in a span element.
+# Output text wrapped in a span element
 #
 # Options:
-#   -c <color>  To specify a text color.
+#   -c <color>  To specify a text color
 #
 # Arguments:
-#   $text  (string)  The text of the span element.
-#
-# Returns:
-#   The input wrapped in a span.
+#   $1 or $3 - String to encapsulate within a span
 span() {
+    local -A attribs
+    local text="$*"
+
+    if [ -n "$FONT" ]; then attribs[font]="$FONT"; fi
+
     if [ "$1" = "-c" ]; then
-        local color="$2"
-        local text="${*:3}"
-
-        if [ -n "$color" ] && [ -n "$text" ]; then
-            echo "<span color='${color}' font='${_FONT}'>${text}</span>"
-        fi
-    else
-        local text="$*"
-
-        if [ -n "$text" ]; then
-            echo "<span font='${_FONT}'>${text}</span>"
-        fi
+        attribs[color]="$2"
+        text="${*:3}"
     fi
+
+    echo "<span$(build_attribs attribs)>$text</span>"
+}
+
+# Builds html element attributes
+#
+# Arguments:
+#   $1 - An associative array of attribute-value pairs
+build_attribs() {
+    local -n array=$1
+    for k in "${!array[@]}"; do
+        echo -n " $k='${array[$k]}'"
+    done
+    echo
+}
+
+# Interpolate between 2 RGB colors
+#
+# Arguments:
+#   $1 - Color to interpolate from, as a hex triplet prefixed with #
+#   $2 - Color to interpolate to, as a hex triplet prefixed with #
+#   $3 - Amount of steps needed to get from start to end color
+interpolate_rgb() {
+    local -i steps=$3
+    local -a colors
+    local color1=$1
+    local color2=$2
+    local reversed=false
+
+    if (( 0x${color1:1:5} > 0x${color2:1:5} )); then
+        color1=$2
+        color2=$1
+        reversed=true
+    fi
+
+    printf -v startR "%d" 0x${color1:1:2}
+    printf -v startG "%d" 0x${color1:3:2}
+    printf -v startB "%d" 0x${color1:5:2}
+    printf -v endR "%d" 0x${color2:1:2}
+    printf -v endG "%d" 0x${color2:3:2}
+    printf -v endB "%d" 0x${color2:5:2}
+
+    stepR=$(( ($endR - $startR) / $steps ))
+    stepG=$(( ($endG - $startG) / $steps ))
+    stepB=$(( ($endB - $startB) / $steps ))
+
+    for i in $(seq 0 $steps); do
+        local -i R=$(( $startR + ($stepR * $i) ))
+        local -i G=$(( $startG + ($stepG * $i) ))
+        local -i B=$(( $startB + ($stepB * $i) ))
+
+        colors+=( "$(printf "#%02x%02x%02x\n" $R $G $B)" )
+    done
+    colors+=( "$(printf "#%02x%02x%02x\n" $endR $endB $endG)" )
+
+    if $reversed; then
+        reverse colors colors_reversed
+        echo "${colors_reversed[@]}"
+    else
+        echo "${colors[@]}"
+    fi
+}
+
+# Reverse an array
+#
+# Arguments:
+#   $1 - Array to reverse
+#   $2 - Destination array
+reverse() {
+    local -n arr="$1" rev="$2"
+    for i in "${arr[@]}"
+    do
+        rev=("$i" "${rev[@]}")
+    done
+}
+
+min() {
+    echo "if ($1 < $2) $1 else $2" | bc
+}
+
+max() {
+    echo "if ($1 > $2) $1 else $2" | bc
+}
+
+clamp() {
+    echo $(min $(max $1 $2) $3)
+}
+
+# Retrieve an item from the provided lookup table based on the percentage of a number
+#
+# Arguments:
+#   $1 - A number
+#   $2 - Number to get a percentage of
+#   $3 - An array of potential values
+plookup() {
+    if [ -z "$2" -o -z "$3" ]; then
+        return
+    fi
+
+    local table=( ${@:3} )
+    local number2=${2%.*}
+    local number1=$(min ${1%.*} $number2)
+    local percent_max=$(( $number1 * $number2 / 100 ))
+    local index=$(( $percent_max * ${#table[@]} / 100 ))
+
+    index=$(clamp $index 0 $(( ${#table[@]} - 1 )) )
+
+    echo ${table[$index]}
 }
 
 # Get battery status.
@@ -212,23 +315,8 @@ get_battery_status_symbol() {
 # Returns:
 #   The color to use for the given battery percentage.
 get_percentage_color() {
-    local -i percent="$1"
-
-    # From red to green
-    if [ -z "$percent" ]; then color="#FFFFFF";
-    elif [ "$percent" -lt 10 ]; then color="#FF0000";
-    elif [ "$percent" -lt 20 ]; then color="#FF4000";
-    elif [ "$percent" -lt 30 ]; then color="#FF8000";
-    elif [ "$percent" -lt 40 ]; then color="#FFC000";
-    elif [ "$percent" -lt 50 ]; then color="#FFFF00";
-    elif [ "$percent" -lt 60 ]; then color="#BFFF00";
-    elif [ "$percent" -lt 70 ]; then color="#7FFF00";
-    elif [ "$percent" -lt 80 ]; then color="#3FFF00";
-    else
-        color="#00FF00"
-    fi
-
-    echo "${color}"
+    local colors=( $(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8) )
+    echo $(plookup $1 100 ${colors[@]})
 }
 
 # Determines whether or not we can send a notification.
@@ -430,33 +518,31 @@ display_segments() {
     echo
 }
 
-# Colors text using either the first or second color.
+# Colors text using either the first or second color
 #
 # Arguments:
-#   $text         (string)  Text to color.
-#   $first_color  (string)  The first color.
-#   $second_color (string)  The second color.
-#   $toggle       (bool)    Toggle that switches between colors.
+#   $1 - Text
+#   $2 - Color to use if toggle is false
+#   $3 - Color to use if toggle is true
+#   $4 - A boolean used to toggle between colors
 #
 # Returns:
-#   The colored text.
+#   The colored text
 multicolor() {
-    local text="$1"
-    local first_color="$2"
-    local second_color="$3"
+    local color="$2"
     local toggle=$4
-    local color="$first_color"
 
-    if $toggle && [ -n "$second_color" ]; then
-        color="$second_color"
+    if $toggle && [ -n "$3" ]; then
+        color="$3"
     fi
 
     if [ -n "$color" ]; then
-        echo "$(span -c "$color" "$text")"
+        echo "$(span -c "$color" "$1")"
     else
-        echo "$(span "$text")"
+        echo "$(span "$1")"
     fi
 }
+
 
 # Display a notification.
 #
@@ -537,7 +623,9 @@ Options:
   -G\t\t\tcolor the battery symbol according to battery percentage
   -h\t\t\tdisplay this help and exit
   -H\t\t\tsuppress displaying if battery is fully-charged
+  -i <color>\t\tcolor gradient start color
   -I\t\t\tonly display symbols
+  -j <color>\t\tcolor gradient end color
   -J <symbol>\t\tsymbol for a battery 100% charged
   -k\t\t\thide the battery percentage
   -K <symbol>\t\tsymbol for a battery 75% charged
@@ -574,7 +662,7 @@ declare -a short_segments
 __UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BLOCK_INSTANCE:-BAT0}")
 TMP_NOTIFY="$(get_temp_dir)/battery-plus.last_notify"
 
-while getopts "a:A:B:c:C:dD:e:E:f:F:GhHIJ:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
+while getopts "a:A:B:c:C:dD:e:E:f:F:GhHi:Ij:J:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
     case "$o" in
         a) _LOW_ACTION="${OPTARG}" ;;
         A) _COLOR_ALERT="${OPTARG}" ;;
@@ -590,7 +678,9 @@ while getopts "a:A:B:c:C:dD:e:E:f:F:GhHIJ:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W:X
         G) _USE_BATT_GRADIENT=true ;;
         h | *) usage ;;
         H) _HIDE_IF_CHARGED=true ;;
+        i) _COLOR_GRADIENT_START="${OPTARG}" ;;
         I) _SYMBOLS_ONLY=true ;;
+        j) _COLOR_GRADIENT_END="${OPTARG}" ;;
         J) _SYMBOL_BATT_100="${OPTARG}" ;;
         k) _HIDE_PERCENTAGE=true ;;
         K) _SYMBOL_BATT_75="${OPTARG}" ;;
