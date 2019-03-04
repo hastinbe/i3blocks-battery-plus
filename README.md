@@ -79,7 +79,7 @@ Expiration time of notifications can be changed using the `-e <milliseconds>` op
 
 ## Customization
 
-Designed to be fully customizable. The following can be set in your i3blocks.conf in newer versions if [i3blocks], in older versions (<= 1.4-4) you can customize using the program options. The following are configurable:
+Designed to be fully customizable. The following can be set in your i3blocks.conf in newer versions of [i3blocks], in older versions (<= 1.4-4) you can customize using the program options. The following are configurable:
 
 Variable | Type | Description
 ------------ | ------------- | -------------
