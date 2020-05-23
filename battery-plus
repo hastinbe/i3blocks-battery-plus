@@ -9,8 +9,10 @@
 #    bc
 #    upower
 #
+#  Recommended:
+#    fonts-font-awesome or fonts-hack
+#
 #  Optional:
-#    fonts-font-awesome
 #    notify-send or dunstify -- for notifications
 #    zenity -- for dialogs
 #
@@ -20,7 +22,6 @@
 #  Author: Beau Hastings <beau@saweet.net>
 #  URL: https://github.com/hastinbe/i3blocks-battery-plus
 
-_FONT=${_FONT:-"FontAwesome"}
 _PERCENT="&#x25;"
 
 # Hide the battery status if fully-charged,
@@ -662,7 +663,7 @@ declare -a short_segments
 __UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BLOCK_INSTANCE:-BAT0}")
 TMP_NOTIFY="$(get_temp_dir)/battery-plus.last_notify"
 
-while getopts "a:A:B:c:C:dD:e:E:f:F:GhHi:Ij:J:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
+while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
     case "$o" in
         a) _LOW_ACTION="${OPTARG}" ;;
         A) _COLOR_ALERT="${OPTARG}" ;;
@@ -673,7 +674,6 @@ while getopts "a:A:B:c:C:dD:e:E:f:F:GhHi:Ij:J:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V
         D) _COLOR_DISCHARGING="${OPTARG}" ;;
         e) _NOTIFY_EXPIRES="${OPTARG}" ;;
         E) _COLOR_ERROR="${OPTARG}" ;;
-        f) _FONT="${OPTARG}" ;;
         F) _COLOR_FULLY_CHARGED="${OPTARG}" ;;
         G) _USE_BATT_GRADIENT=true ;;
         h | *) usage ;;

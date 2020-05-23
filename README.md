@@ -14,8 +14,10 @@ An enhanced battery status indicator for [i3blocks].
 * [i3blocks]
 * [upower]
 
+#### Recommended
+* fonts-font-awesome or fonts-hack
+
 #### Optional
-* fonts-font-awesome
 * [notify-osd], [dunst], or any [libnotify] compatible notification daemon
 * [zenity]
 
@@ -28,7 +30,6 @@ command=$SCRIPT_DIR/battery-plus
 markup=pango
 instance=BAT0
 interval=30
-#_FONT=FontAwesome
 #_PERCENT=&#x25;
 #_HIDE_IF_CHARGED=false
 #_USE_BATT_GRADIENT=false
@@ -83,7 +84,6 @@ Designed to be fully customizable. The following can be set in your i3blocks.con
 
 Variable | Type | Description
 ------------ | ------------- | -------------
-_FONT | string | Font for text and symbols
 _PERCENT | string | Symbol to use for the percent sign
 _COLOR_FULLY_CHARGED | string | Color of the fully-charged symbol
 _COLOR_CHARGING | string | Color of the charging symbol
