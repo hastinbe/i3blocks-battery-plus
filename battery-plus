@@ -174,7 +174,7 @@ interpolate_rgb() {
 
         colors+=( "$(printf "#%02x%02x%02x\n" $R $G $B)" )
     done
-    colors+=( "$(printf "#%02x%02x%02x\n" $endR $endB $endG)" )
+    colors+=( "$(printf "#%02x%02x%02x\n" $endR $endG $endB)" )
 
     if $reversed; then
         reverse colors colors_reversed
