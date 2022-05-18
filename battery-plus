@@ -598,7 +598,7 @@ dialog() {
 
     command="zenity"
 
-    if [ -n "$symbol" ]; then command="$command --symbol-name=\"$symbol\""; fi
+    if [ -n "$symbol" ]; then command="$command --icon-name=\"$symbol\""; fi
     if [ -n "$type" ]; then command="$command --${type}"; fi
 
     command="$command --text=\"$text\" $rest"
