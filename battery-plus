@@ -387,7 +387,7 @@ display_batt_pending_charge() {
         echo -n "$(span -c "${_COLOR_CHARGING}" "$_SYMBOL_CHARGING") "
     fi
 
-    echo "${battery_charge_symbol}"
+    echo "$colored_battery_symbol"
 }
 
 # Display the pending discharge indicator.
