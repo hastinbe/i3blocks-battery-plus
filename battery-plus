@@ -118,7 +118,9 @@ span() {
     if [ -n "$FONT" ]; then attribs[font]="$FONT"; fi
 
     if [ "$1" = "-c" ]; then
-        attribs[color]="$2"
+        if [ -n "$2" ]; then
+            attribs[color]="$2"
+        fi
         text="${*:3}"
     fi
 
