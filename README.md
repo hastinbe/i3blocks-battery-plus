@@ -34,6 +34,7 @@ interval=30
 #_HIDE_IF_CHARGED=false
 #_USE_BATT_GRADIENT=false
 #_SYMBOLS_ONLY=false
+#_SUPPRESS_SYMBOLS=false
 #_HIDE_PERCENTAGE=false
 #_HIDE_TIME_REMAINING=true
 #_HIDE_TIME_TO_FULL=true
@@ -69,6 +70,7 @@ interval=30
 #_SYMBOL_BATT_0=&#xf244;
 #_SYMBOL_DIRECTION_UP=&#8593;
 #_SYMBOL_DIRECTION_DOWN=&#8595;
+#_HIDE_OVER_PERCENTAGE=100
 ```
 
 Set the `instance` variable to your battery to monitor. If you want to monitor multiple batteries you will need to add this blocklet twice in your i3blocks.conf with different `instance` settings.
