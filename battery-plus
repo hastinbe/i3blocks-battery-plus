@@ -173,14 +173,14 @@ interpolate_rgb() {
     printf -v endG "%d" "0x${color2:3:2}"
     printf -v endB "%d" "0x${color2:5:2}"
 
-    stepR=$(( ($endR - $startR) / $steps ))
-    stepG=$(( ($endG - $startG) / $steps ))
-    stepB=$(( ($endB - $startB) / $steps ))
+    stepR=$(( (endR - startR) / steps ))
+    stepG=$(( (endG - startG) / steps ))
+    stepB=$(( (endB - startB) / steps ))
 
 for i in $(seq 0 "$steps"); do
-        local -i R=$(( $startR + ($stepR * $i) ))
-        local -i G=$(( $startG + ($stepG * $i) ))
-        local -i B=$(( $startB + ($stepB * $i) ))
+        local -i R=$(( startR + (stepR * i) ))
+        local -i G=$(( startG + (stepG * i) ))
+        local -i B=$(( startB + (stepB * i) ))
 
         colors+=( "$(printf "#%02x%02x%02x\n" $R $G $B)" )
     done
@@ -233,8 +233,8 @@ plookup() {
     local table=( ${@:3} )
     local number2=${2%.*}
     local number1=$(min "${1%.*}" "$number2")
-    local percent_max=$(( $number1 * $number2 / 100 ))
-    local index=$(( $percent_max * ${#table[@]} / 100 ))
+    local percent_max=$(( number1 * number2 / 100 ))
+    local index=$(( percent_max * ${#table[@]} / 100 ))
 
     index=$(clamp $index 0 $(( ${#table[@]} - 1 )) )
 
@@ -340,7 +340,7 @@ can_notify() {
 
     if [ -z "$last" ]; then return 0; fi
 
-    local -i diff=$(($now - $last))
+    local -i diff=$(( now - last ))
 
     [ $diff -gt "$_NOTIFY_THROTTLE" ]
 }
