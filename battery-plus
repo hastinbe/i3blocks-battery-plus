@@ -341,7 +341,7 @@ get_battery_status_symbol() {
 get_percentage_color() {
     local colors
     read -ra colors <<< "$(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8)"
-    plookup "$1" 100 ${colors[@]}
+    plookup "$1" 100 "${colors[@]}"
 }
 
 # Determines whether or not we can send a notification.
