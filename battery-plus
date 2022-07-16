@@ -100,6 +100,14 @@ if ! $_SUPPRESS_SYMBOLS; then
     _SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"&#8595;"}
 fi
 
+empty() {
+    [[ -z $1 ]]
+}
+
+not_empty() {
+    [[ -n $1 ]]
+}
+
 # Get a the system's temporary files directory.
 #
 # Notes:
@@ -123,10 +131,10 @@ span() {
     local -A attribs
     local text="$*"
 
-    if [ -n "$FONT" ]; then attribs[font]="$FONT"; fi
+    if not_empty "$FONT"; then attribs[font]="$FONT"; fi
 
     if [ "$1" = "-c" ]; then
-        if [ -n "$2" ]; then
+        if not_empty "$2"; then
             attribs[color]="$2"
         fi
         text="${*:3}"
@@ -226,7 +234,7 @@ clamp() {
 #   $2 - Number to get a percentage of
 #   $3 - An array of potential values
 plookup() {
-    if [ -z "$2" -o -z "$3" ]; then
+    if empty "$2" || empty "$3"; then
         return
     fi
 
@@ -300,10 +308,10 @@ get_battery_charge_symbol() {
     local percent="$1"
     local symbol
 
-    if [ "$battery_percentage" -ge 90 ]; then symbol="$_SYMBOL_BATT_100"
-    elif [ "$battery_percentage" -ge 70 ]; then symbol="$_SYMBOL_BATT_75"
-    elif [ "$battery_percentage" -ge 40 ]; then symbol="$_SYMBOL_BATT_50"
-    elif [ "$battery_percentage" -ge 20 ]; then symbol="$_SYMBOL_BATT_25"
+    if (( battery_percentage >= 90 )); then symbol="$_SYMBOL_BATT_100"
+    elif (( battery_percentage >= 70 )); then symbol="$_SYMBOL_BATT_75"
+    elif (( battery_percentage >= 40 )); then symbol="$_SYMBOL_BATT_50"
+    elif (( battery_percentage >= 20 )); then symbol="$_SYMBOL_BATT_25"
     else symbol="$_SYMBOL_BATT_0"
     fi
 
@@ -338,11 +346,12 @@ can_notify() {
     local -i now=$(date +"%s")
     local -i last=$(get_last_notify_time)
 
-    if [ -z "$last" ]; then return 0; fi
+    if empty "$last"; then return 0; fi
 
     local -i diff=$(( now - last ))
 
-    [ $diff -gt "$_NOTIFY_THROTTLE" ]
+    # [ $diff -gt "$_NOTIFY_THROTTLE" ]
+    (( diff > _NOTIFY_THROTTLE ))
 }
 
 # Get the last time we sent a notification.
@@ -365,7 +374,7 @@ save_last_notify_time() {
 # Returns:
 #   The charging indicator.
 display_batt_charging() {
-    if [ -n "$_SYMBOL_CHARGING" ]; then
+    if not_empty "$_SYMBOL_CHARGING"; then
         echo -n "$(span -c "${_COLOR_CHARGING}" "$_SYMBOL_CHARGING") "
     fi
 
@@ -377,7 +386,7 @@ display_batt_charging() {
 # Returns:
 #   The discharging indicator.
 display_batt_discharging() {
-    if [ -n "$_SYMBOL_DISCHARGING" ]; then
+    if not_empty "$_SYMBOL_DISCHARGING"; then
         echo -n "$(span -c "${_COLOR_DISCHARGING}" "$_SYMBOL_DISCHARGING") "
     fi
 
@@ -389,11 +398,11 @@ display_batt_discharging() {
 # Returns:
 #   The pending charge indicator.
 display_batt_pending_charge() {
-    if [ -n "$_SYMBOL_PENDING" ]; then
+    if not_empty "$_SYMBOL_PENDING"; then
        echo -n "$(span -c "${_COLOR_PENDING}" "$_SYMBOL_PENDING") "
     fi
 
-    if [ -n "$_SYMBOL_CHARGING" ]; then
+    if not_empty "$_SYMBOL_CHARGING"; then
         echo -n "$(span -c "${_COLOR_CHARGING}" "$_SYMBOL_CHARGING") "
     fi
 
@@ -405,11 +414,11 @@ display_batt_pending_charge() {
 # Returns:
 #   The pending discharge indicator.
 display_batt_pending_discharge() {
-    if [ -n "$_SYMBOL_PENDING" ]; then
+    if not_empty "$_SYMBOL_PENDING"; then
         echo -n "$(span -c "${_COLOR_PENDING}" "$_SYMBOL_PENDING") "
     fi
 
-    if [ -n "$_SYMBOL_DISCHARGING" ]; then
+    if not_empty "$_SYMBOL_DISCHARGING"; then
         echo -n "$(span -c "${_COLOR_DISCHARGING}" "$_SYMBOL_DISCHARGING") "
     fi
 
@@ -429,7 +438,7 @@ display_batt_empty() {
 # Returns:
 #   The fully-charged indicator.
 display_batt_fully_charged() {
-   if [ -n "$_SYMBOL_FULLY_CHARGED" ]; then
+   if not_empty "$_SYMBOL_FULLY_CHARGED"; then
         echo -n "$(span -c "${_COLOR_FULLY_CHARGED}" "$_SYMBOL_FULLY_CHARGED") "
     fi
 
@@ -441,7 +450,7 @@ display_batt_fully_charged() {
 # Returns:
 #   The unknonw battery indicator.
 display_batt_unknown() {
-    if [ -n "$_SYMBOL_UNKNOWN" ]; then
+    if not_empty "$_SYMBOL_UNKNOWN"; then
         echo -n "$(span "$_SYMBOL_UNKNOWN") "
     fi
 
@@ -461,7 +470,7 @@ display_batt_error() {
 # Returns:
 #   The battery percentage, or nothing if disabled.
 display_percentage() {
-    if ! [ "$_SYMBOLS_ONLY" = true -o "$_HIDE_PERCENTAGE" = true ]; then
+    if [[ "$_SYMBOLS_ONLY" = false && "$_HIDE_PERCENTAGE" = false ]]; then
         echo -n " $(span -c "${percentage_color}" "${battery_percentage:---}${_PERCENT}")"
 
         if [ "$status" = "charging" ] && $_SHOW_CHARGE_DIRECTION; then
@@ -484,9 +493,9 @@ display_percentage() {
 display_time_remaining() {
     local force=${1:-false}
 
-    if [ "$force" = true ] || ! [ "$_SYMBOLS_ONLY" = true -o "$_HIDE_TIME_REMAINING" = true ]; then
+    if $force || ! [[ "$_SYMBOLS_ONLY" = true || "$_HIDE_TIME_REMAINING" = true ]]; then
         time_to_empty=$(get_time_to_empty "$battery_info")
-        if [ -n "$time_to_empty" ]; then
+        if not_empty "$time_to_empty"; then
             echo "$time_to_empty"
         fi
     fi
@@ -502,9 +511,9 @@ display_time_remaining() {
 display_time_to_full() {
     local force=${1:-false}
 
-    if [ "$force" = true ] || ! [ "$_SYMBOLS_ONLY" = true -o "$_HIDE_TIME_TO_FULL" = true ]; then
+    if $force || ! [[ "$_SYMBOLS_ONLY" = true || "$_HIDE_TIME_TO_FULL" = true ]]; then
         time_to_full=$(get_time_to_full "$battery_info")
-        if [ -n "$time_to_full" ]; then
+        if not_empty "$time_to_full"; then
             echo "$time_to_full"
         fi
     fi
@@ -521,7 +530,7 @@ display_segments() {
     local -a segments="$@"
 
     for segment in "${segments[@]}"; do
-        if [ -n "$segment" ]; then
+        if not_empty "$segment"; then
             echo -n "$segment"
         fi
     done
@@ -543,11 +552,11 @@ multicolor() {
     local color="$2"
     local toggle=$4
 
-    if $toggle && [ -n "$3" ]; then
+    if $toggle && not_empty "$3"; then
         color="$3"
     fi
 
-    if [ -n "$color" ]; then
+    if not_empty "$color"; then
         span -c "$color" "$1"
     else
         span "$1"
@@ -571,7 +580,7 @@ notify() {
     local rest="${@:5}"
     local command
 
-    if [ -z "$text" ] || ! $force && ! $(can_notify); then return; fi
+    if empty "$text" || ! $force && ! can_notify; then return; fi
 
     if [ "$_NOTIFY_PROGRAM" = "dunstify" ]; then
         command="dunstify -r 1001"
@@ -579,9 +588,9 @@ notify() {
         command="notify-send"
     fi
 
-    if [ -n "$_NOTIFY_EXPIRES" ]; then command="$command -t $_NOTIFY_EXPIRES"; fi
-    if [ -n "$symbol" ]; then command="$command -i $symbol"; fi
-    if [ -n "$type" ]; then command="$command -u $type"; fi
+    if not_empty "$_NOTIFY_EXPIRES"; then command="$command -t $_NOTIFY_EXPIRES"; fi
+    if not_empty "$symbol"; then command="$command -i $symbol"; fi
+    if not_empty "$type"; then command="$command -u $type"; fi
 
     command="$command $rest \"$text\""
     if eval "$command"; then
@@ -602,14 +611,14 @@ dialog() {
     local type="$3"
     local rest="${@:4}"
 
-    if [ -z "$text" ]; then
+    if empty "$text"; then
         return
     fi
 
     command="zenity"
 
-    if [ -n "$symbol" ]; then command="$command --icon-name=\"$symbol\""; fi
-    if [ -n "$type" ]; then command="$command --${type}"; fi
+    if not_empty "$symbol"; then command="$command --icon-name=\"$symbol\""; fi
+    if not_empty "$type"; then command="$command --${type}"; fi
 
     command="$command --text=\"$text\" $rest"
     eval "$command"
@@ -779,10 +788,10 @@ short_segments=( "${long_segments[@]}" )
 
 # Append all text segments
 long_segments+=( "$(display_percentage)" )
-if [ -n "$(display_time_remaining)" ]; then
+if not_empty "$(display_time_remaining)"; then
     long_segments+=( "($(display_time_remaining))" )
 fi
-if [ -n "$(display_time_to_full)" ]; then
+if not_empty "$(display_time_to_full)"; then
     long_segments+=( "($(display_time_to_full))" )
 fi
 
@@ -795,7 +804,7 @@ display_segments ${short_segments[@]}
 # Handle click events
 case $BLOCK_BUTTON in
     1)
-        if [ -n "$CAPACITY_TRIGGERED" ]; then
+        if not_empty "$CAPACITY_TRIGGERED"; then
             $(dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap")
         else
             if [ "$status" = "discharging" ]; then
@@ -807,6 +816,6 @@ case $BLOCK_BUTTON in
         ;;
 esac
 
-if [ -n "$battery_percentage" ] && [ "$battery_percentage" -le 5 ]; then
+if not_empty "$battery_percentage" && (( battery_percentage <= 5 )); then
     exit 33
 fi
