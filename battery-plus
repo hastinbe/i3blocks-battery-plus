@@ -313,10 +313,10 @@ get_battery_charge_symbol() {
     local percent="$1"
     local symbol
 
-    if (( battery_percentage >= 90 )); then symbol="$_SYMBOL_BATT_100"
-    elif (( battery_percentage >= 70 )); then symbol="$_SYMBOL_BATT_75"
-    elif (( battery_percentage >= 40 )); then symbol="$_SYMBOL_BATT_50"
-    elif (( battery_percentage >= 20 )); then symbol="$_SYMBOL_BATT_25"
+    if (( percent >= 90 )); then symbol="$_SYMBOL_BATT_100"
+    elif (( percent >= 70 )); then symbol="$_SYMBOL_BATT_75"
+    elif (( percent >= 40 )); then symbol="$_SYMBOL_BATT_50"
+    elif (( percent >= 20 )); then symbol="$_SYMBOL_BATT_25"
     else symbol="$_SYMBOL_BATT_0"
     fi
 
