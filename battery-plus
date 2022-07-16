@@ -109,7 +109,7 @@ fi
 # Returns:
 #   The path to the temporary directory.
 get_temp_dir() {
-    echo $(dirname $(mktemp -ut "battery-plus.XXX"))
+    dirname "$(mktemp -ut "battery-plus.XXX")"
 }
 
 # Output text wrapped in a span element
