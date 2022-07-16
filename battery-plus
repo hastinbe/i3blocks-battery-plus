@@ -166,25 +166,25 @@ interpolate_rgb() {
         reversed=true
     fi
 
-    printf -v startR "%d" 0x${color1:1:2}
-    printf -v startG "%d" 0x${color1:3:2}
-    printf -v startB "%d" 0x${color1:5:2}
-    printf -v endR "%d" 0x${color2:1:2}
-    printf -v endG "%d" 0x${color2:3:2}
-    printf -v endB "%d" 0x${color2:5:2}
+    printf -v startR "%d" "0x${color1:1:2}"
+    printf -v startG "%d" "0x${color1:3:2}"
+    printf -v startB "%d" "0x${color1:5:2}"
+    printf -v endR "%d" "0x${color2:1:2}"
+    printf -v endG "%d" "0x${color2:3:2}"
+    printf -v endB "%d" "0x${color2:5:2}"
 
     stepR=$(( ($endR - $startR) / $steps ))
     stepG=$(( ($endG - $startG) / $steps ))
     stepB=$(( ($endB - $startB) / $steps ))
 
-    for i in $(seq 0 $steps); do
+for i in $(seq 0 "$steps"); do
         local -i R=$(( $startR + ($stepR * $i) ))
         local -i G=$(( $startG + ($stepG * $i) ))
         local -i B=$(( $startB + ($stepB * $i) ))
 
         colors+=( "$(printf "#%02x%02x%02x\n" $R $G $B)" )
     done
-    colors+=( "$(printf "#%02x%02x%02x\n" $endR $endG $endB)" )
+    colors+=( "$(printf "#%02x%02x%02x\n" "$endR" "$endG" "$endB")" )
 
     if $reversed; then
         reverse colors colors_reversed
@@ -216,7 +216,7 @@ max() {
 }
 
 clamp() {
-    echo $(min $(max $1 $2) $3)
+    echo $(min $(max "$1" "$2") "$3")
 }
 
 # Retrieve an item from the provided lookup table based on the percentage of a number
@@ -232,13 +232,13 @@ plookup() {
 
     local table=( ${@:3} )
     local number2=${2%.*}
-    local number1=$(min ${1%.*} $number2)
+    local number1=$(min "${1%.*}" "$number2")
     local percent_max=$(( $number1 * $number2 / 100 ))
     local index=$(( $percent_max * ${#table[@]} / 100 ))
 
     index=$(clamp $index 0 $(( ${#table[@]} - 1 )) )
 
-    echo ${table[$index]}
+    echo "${table[$index]}"
 }
 
 # Get battery status.
@@ -327,7 +327,7 @@ get_battery_status_symbol() {
 #   The color to use for the given battery percentage.
 get_percentage_color() {
     local colors=( $(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8) )
-    echo $(plookup $1 100 ${colors[@]})
+    echo $(plookup "$1" 100 ${colors[@]})
 }
 
 # Determines whether or not we can send a notification.
@@ -342,7 +342,7 @@ can_notify() {
 
     local -i diff=$(($now - $last))
 
-    [ $diff -gt $_NOTIFY_THROTTLE ]
+    [ $diff -gt "$_NOTIFY_THROTTLE" ]
 }
 
 # Get the last time we sent a notification.
@@ -351,7 +351,7 @@ can_notify() {
 #   Time in seconds since the Epoch.
 get_last_notify_time() {
     if [ -f "$TMP_NOTIFY" ]; then
-        echo $(stat -c '%Y' "$TMP_NOTIFY")
+        echo "$(stat -c '%Y' "$TMP_NOTIFY")"
     fi
 }
 
@@ -461,7 +461,7 @@ display_batt_error() {
 # Returns:
 #   The battery percentage, or nothing if disabled.
 display_percentage() {
-    if ! [ $_SYMBOLS_ONLY = true -o $_HIDE_PERCENTAGE = true ]; then
+    if ! [ "$_SYMBOLS_ONLY" = true -o "$_HIDE_PERCENTAGE" = true ]; then
         echo -n " $(span -c "${percentage_color}" "${battery_percentage:---}${_PERCENT}")"
 
         if [ "$status" = "charging" ] && $_SHOW_CHARGE_DIRECTION; then
@@ -484,7 +484,7 @@ display_percentage() {
 display_time_remaining() {
     local force=${1:-false}
 
-    if [ $force = true ] || ! [ $_SYMBOLS_ONLY = true -o $_HIDE_TIME_REMAINING = true ]; then
+    if [ "$force" = true ] || ! [ "$_SYMBOLS_ONLY" = true -o "$_HIDE_TIME_REMAINING" = true ]; then
         time_to_empty=$(get_time_to_empty "$battery_info")
         if [ -n "$time_to_empty" ]; then
             echo "$time_to_empty"
@@ -502,7 +502,7 @@ display_time_remaining() {
 display_time_to_full() {
     local force=${1:-false}
 
-    if [ $force = true ] || ! [ $_SYMBOLS_ONLY = true -o $_HIDE_TIME_TO_FULL = true ]; then
+    if [ "$force" = true ] || ! [ "$_SYMBOLS_ONLY" = true -o "$_HIDE_TIME_TO_FULL" = true ]; then
         time_to_full=$(get_time_to_full "$battery_info")
         if [ -n "$time_to_full" ]; then
             echo "$time_to_full"
@@ -584,7 +584,7 @@ notify() {
     if [ -n "$type" ]; then command="$command -u $type"; fi
 
     command="$command $rest \"$text\""
-    if eval $command; then
+    if eval "$command"; then
         save_last_notify_time
     fi
 }
@@ -612,7 +612,7 @@ dialog() {
     if [ -n "$type" ]; then command="$command --${type}"; fi
 
     command="$command --text=\"$text\" $rest"
-    eval $command
+    eval "$command"
 }
 
 # Display program usage.
@@ -746,7 +746,7 @@ case "$warning_level" in
 esac
 
 # Displayable alerts
-if [ "$_CAPACITY_ALERT" -gt 0 ] && [ "${capacity%.*}" -le $_CAPACITY_ALERT ]; then
+if [ "$_CAPACITY_ALERT" -gt 0 ] && [ "${capacity%.*}" -le "$_CAPACITY_ALERT" ]; then
     CAPACITY_TRIGGERED=true
     long_segments+=( "$(span -c "$_COLOR_ALERT" "$_SYMBOL_ALERT") " )
 fi
@@ -764,7 +764,7 @@ case "$status" in
         long_segments+=( "$(display_batt_fully_charged)" )
         ;;
     pending-charge)
-        if $_HIDE_IF_CHARGED && [ $battery_percentage -ge $_HIDE_OVER_PERCENTAGE ]; then
+        if $_HIDE_IF_CHARGED && [ "$battery_percentage" -ge "$_HIDE_OVER_PERCENTAGE" ]; then
             exit 0
         fi
         long_segments+=( "$(display_batt_pending_charge)" )
