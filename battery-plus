@@ -216,7 +216,7 @@ max() {
 }
 
 clamp() {
-    min $(max "$1" "$2") "$3"
+    min "$(max "$1" "$2")" "$3"
 }
 
 # Retrieve an item from the provided lookup table based on the percentage of a number
