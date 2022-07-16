@@ -27,6 +27,9 @@ _PERCENT="&#x25;"
 # Hide the battery status if fully-charged,
 _HIDE_IF_CHARGED=${_HIDE_IF_CHARGED:-false}
 
+# Hide if battery is about to be charged and over than this value
+_HIDE_OVER_PERCENTAGE=${_HIDE_OVER_PERCENTAGE:-100}
+
 # Color the battery symbol using gradient.
 _USE_BATT_GRADIENT=${_USE_BATT_GRADIENT:-false}
 
@@ -637,6 +640,7 @@ Options:
   -M <symbol>\t\tsymbol for a battery 50% charged
   -n <program>\t\ta libnotify compatible notification program
   -N <color>\t\tcolor of the battery charge decreasing indicator
+  -o <percentage>\tpercentage above which a battery is considered full
   -O <symbol>\t\tsymbol for a battery with no/low charge
   -p <symbol>\t\tsymbol to use for the percent sign
   -P <color>\t\tcolor of the pending charge symbol
@@ -665,7 +669,7 @@ declare -a short_segments
 __UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BLOCK_INSTANCE:-BAT0}")
 TMP_NOTIFY="$(get_temp_dir)/battery-plus.last_notify"
 
-while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
+while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
     case "$o" in
         a) _LOW_ACTION="${OPTARG}" ;;
         A) _COLOR_ALERT="${OPTARG}" ;;
@@ -691,6 +695,7 @@ while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:O:p:P:Q:rR:S:t:T:uU:V:W
         M) _SYMBOL_BATT_50="${OPTARG}" ;;
         n) _NOTIFY_PROGRAM="${OPTARG}" ;;
         N) _COLOR_DIRECTIONAL_DOWN="${OPTARG}" ;;
+        o) _HIDE_OVER_PERCENTAGE="${OPTARG}" ;;
         O) _SYMBOL_BATT_0="${OPTARG}" ;;
         p) _PERCENT="${OPTARG}" ;;
         P) _COLOR_PENDING="${OPTARG}" ;;
@@ -751,7 +756,12 @@ case "$status" in
         fi
         long_segments+=( "$(display_batt_fully_charged)" )
         ;;
-    pending-charge)     long_segments+=( "$(display_batt_pending_charge)" ) ;;
+    pending-charge)
+        if $_HIDE_IF_CHARGED && [ $battery_percentage -ge $_HIDE_OVER_PERCENTAGE ]; then
+            exit 0
+        fi
+        long_segments+=( "$(display_batt_pending_charge)" )
+        ;;
     pending-discharge)  long_segments+=( "$(display_batt_pending_discharge)" ) ;;
     unknown)            long_segments+=( "$(display_batt_unknown)" ) ;;
     *)                  long_segments+=( "$(display_batt_error)" ) ;;

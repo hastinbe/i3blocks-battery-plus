@@ -121,6 +121,7 @@ _LOW_ACTION | string | Action to take when the battery level reaches low (`none`
 _NOTIFY_PROGRAM | string | A libnotify compatible program to send notifications (`notify-send`, `dunstify`)
 _NOTIFY_EXPIRES | integer | The duration, in milliseconds, for the notification to appear on screen
 _NOTIFY_THROTTLE | integer | Minimum time in seconds between notifications to prevent spam
+_HIDE_OVER_PERCENTAGE | integer | Percentage above which a battery is considered full
 
 ## License
 
