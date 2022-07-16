@@ -766,7 +766,7 @@ case "$warning_level" in
 esac
 
 # Displayable alerts
-if [ "$_CAPACITY_ALERT" -gt 0 ] && [ "${capacity%.*}" -le "$_CAPACITY_ALERT" ]; then
+if (( _CAPACITY_ALERT > 0 && "${capacity%.*}" <= _CAPACITY_ALERT )); then
     CAPACITY_TRIGGERED=true
     long_segments+=( "$(span -c "$_COLOR_ALERT" "$_SYMBOL_ALERT") " )
 fi
@@ -784,7 +784,7 @@ case "$status" in
         long_segments+=( "$(display_batt_fully_charged)" )
         ;;
     pending-charge)
-        if $_HIDE_IF_CHARGED && [ "$battery_percentage" -ge "$_HIDE_OVER_PERCENTAGE" ]; then
+        if $_HIDE_IF_CHARGED && (( battery_percentage >= _HIDE_OVER_PERCENTAGE )); then
             exit 0
         fi
         long_segments+=( "$(display_batt_pending_charge)" )
