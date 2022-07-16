@@ -238,7 +238,9 @@ plookup() {
         return
     fi
 
-    local table=( ${@:3} )
+    local table
+    IFS=' ' read -ra table <<< "${@:3}"
+
     local number2=${2%.*}
     local number1=$(min "${1%.*}" "$number2")
     local percent_max=$(( number1 * number2 / 100 ))
@@ -334,7 +336,8 @@ get_battery_status_symbol() {
 # Returns:
 #   The color to use for the given battery percentage.
 get_percentage_color() {
-    local colors=( $(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8) )
+    local colors
+    read -ra colors <<< "$(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8)"
     plookup "$1" 100 ${colors[@]}
 }
 
