@@ -536,7 +536,7 @@ display_time_to_full() {
 # Returns:
 #   Each segment after another, followed by a newline.
 display_segments() {
-    local -a segments="$@"
+    local -a segments=("$@")
 
     for segment in "${segments[@]}"; do
         if not_empty "$segment"; then
