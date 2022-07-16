@@ -586,7 +586,7 @@ notify() {
     local symbol="$2"
     local type="$3"
     local force="$4"
-    local rest="${@:5}"
+    local rest="${*:5}"
     local command
 
     if empty "$text" || ! $force && ! can_notify; then return; fi
@@ -618,7 +618,7 @@ dialog() {
     local text="$1"
     local symbol="$2"
     local type="$3"
-    local rest="${@:4}"
+    local rest="${*:4}"
 
     if empty "$text"; then
         return
@@ -805,10 +805,10 @@ if not_empty "$(display_time_to_full)"; then
 fi
 
 # Display the block long_text
-display_segments ${long_segments[@]}
+display_segments "${long_segments[@]}"
 
 # Display the block short_text
-display_segments ${short_segments[@]}
+display_segments "${short_segments[@]}"
 
 # Handle click events
 case $BLOCK_BUTTON in
