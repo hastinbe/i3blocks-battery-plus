@@ -135,6 +135,7 @@ span() {
 
     if [ "$1" = "-c" ]; then
         if not_empty "$2"; then
+            # shellcheck disable=SC2034
             attribs[color]="$2"
         fi
         text="${*:3}"
@@ -196,6 +197,7 @@ for i in $(seq 0 "$steps"); do
 
     if $reversed; then
         reverse colors colors_reversed
+        # shellcheck disable=SC2154
         echo "${colors_reversed[@]}"
     else
         echo "${colors[@]}"
