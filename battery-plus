@@ -747,12 +747,12 @@ warning_level=$(get_battery_warning_level)
 case "$warning_level" in
     critical)
         case "$_CRITICAL_ACTION" in
-            notify) $(notify "$(span "Your battery level is ${warning_level}!")" "$battery_status_symbol" "critical" false "-c device") ;;
+            notify) notify "$(span "Your battery level is ${warning_level}!")" "$battery_status_symbol" "critical" false "-c device" ;;
         esac
         ;;
     low)
         case "$_LOW_ACTION" in
-            notify) $(notify "$(span "Your battery level is ${warning_level}")" "$battery_status_symbol" "normal" false "-c device") ;;
+            notify) notify "$(span "Your battery level is ${warning_level}")" "$battery_status_symbol" "normal" false "-c device" ;;
         esac
         ;;
 esac
@@ -808,12 +808,12 @@ display_segments ${short_segments[@]}
 case $BLOCK_BUTTON in
     1)
         if not_empty "$CAPACITY_TRIGGERED"; then
-            $(dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap")
+            dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap"
         else
             if [ "$status" = "discharging" ]; then
-                $(notify "$(span "$(display_time_remaining true) remaining")" "alarm-symbolic" "normal" true "-c device")
+                notify "$(span "$(display_time_remaining true) remaining")" "alarm-symbolic" "normal" true "-c device"
             elif [ "$status" = "charging" ]; then
-                $(notify "$(span "$(display_time_to_full true) until fully charged")" "alarm-symbolic" "normal" true "-c device")
+                notify "$(span "$(display_time_to_full true) until fully charged")" "alarm-symbolic" "normal" true "-c device"
             fi
         fi
         ;;
