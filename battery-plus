@@ -241,8 +241,11 @@ plookup() {
     local table
     IFS=' ' read -ra table <<< "${@:3}"
 
+    local number1
     local number2=${2%.*}
-    local number1=$(min "${1%.*}" "$number2")
+
+    number1=$(min "${1%.*}" "$number2")
+
     local percent_max=$(( number1 * number2 / 100 ))
     local index=$(( percent_max * ${#table[@]} / 100 ))
 
@@ -346,14 +349,17 @@ get_percentage_color() {
 # Returns:
 #   0 on false, 1 on true.
 can_notify() {
-    local -i now=$(date +"%s")
-    local -i last=$(get_last_notify_time)
+    local -i now
+    local -i last
+    local -i diff
+
+    now=$(date +"%s")
+    last=$(get_last_notify_time)
 
     if empty "$last"; then return 0; fi
 
-    local -i diff=$(( now - last ))
+    diff=$(( now - last ))
 
-    # [ $diff -gt "$_NOTIFY_THROTTLE" ]
     (( diff > _NOTIFY_THROTTLE ))
 }
 
