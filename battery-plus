@@ -28,7 +28,7 @@ _PERCENT="&#x25;"
 _HIDE_IF_CHARGED=${_HIDE_IF_CHARGED:-false}
 
 # Hide if battery is about to be charged and over than this value
-_HIDE_OVER_PERCENTAGE=${_HIDE_OVER_PERCENTAGE:-85}
+_HIDE_OVER_PERCENTAGE=${_HIDE_OVER_PERCENTAGE:-100}
 
 # Color the battery symbol using gradient.
 _USE_BATT_GRADIENT=${_USE_BATT_GRADIENT:-false}
