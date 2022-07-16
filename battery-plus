@@ -503,7 +503,7 @@ display_time_remaining() {
     local force=${1:-false}
 
     if $force || ! [[ "$_SYMBOLS_ONLY" = true || "$_HIDE_TIME_REMAINING" = true ]]; then
-        time_to_empty=$(get_time_to_empty "$battery_info")
+        time_to_empty=$(get_time_to_empty)
         if not_empty "$time_to_empty"; then
             echo "$time_to_empty"
         fi
@@ -521,7 +521,7 @@ display_time_to_full() {
     local force=${1:-false}
 
     if $force || ! [[ "$_SYMBOLS_ONLY" = true || "$_HIDE_TIME_TO_FULL" = true ]]; then
-        time_to_full=$(get_time_to_full "$battery_info")
+        time_to_full=$(get_time_to_full)
         if not_empty "$time_to_full"; then
             echo "$time_to_full"
         fi
