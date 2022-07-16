@@ -109,6 +109,7 @@ _SYMBOL_BATT_0 | string | Symbol for a battery with no/low charge
 _SYMBOL_DIRECTION_UP | string | Symbol to indicate battery charge is increasing
 _SYMBOL_DIRECTION_DOWN | string | Symbol to indicate battery charge is decreasing
 _USE_BATT_GRADIENT | boolean | Use a color gradient for the battery symbol based on the % of charge
+_SUPPRESS_SYMBOLS | boolean | Suppress all symbols from output
 _SYMBOLS_ONLY | boolean | Display only symbols, no text
 _HIDE_IF_CHARGED | boolean | Hide the indicator if the battery is fully-charged
 _HIDE_PERCENTAGE | boolean | Hide the battery percentage

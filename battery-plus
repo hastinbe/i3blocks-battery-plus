@@ -36,6 +36,9 @@ _USE_BATT_GRADIENT=${_USE_BATT_GRADIENT:-false}
 # Only show symbols.
 _SYMBOLS_ONLY=${_SYMBOLS_ONLY:-false}
 
+# Don't use any symbols.
+_SUPPRESS_SYMBOLS=${_SUPPRESS_SYMBOLS:-false}
+
 # Hide the battery percentage
 _HIDE_PERCENTAGE=${_HIDE_PERCENTAGE:-false}
 
@@ -80,20 +83,22 @@ _COLOR_GRADIENT_START=${_COLOR_GRADIENT_START:-"#FF0000"}
 _COLOR_GRADIENT_END=${_COLOR_GRADIENT_END:-"#00FF00"}
 
 # Symbols
-_SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
-_SYMBOL_CHARGING=${_SYMBOL_CHARGING:-"&#xf0e7;"}
-_SYMBOL_DISCHARGING=${_SYMBOL_DISCHARGING:-""}
-_SYMBOL_UNKNOWN=${_SYMBOL_UNKNOWN:-"&#xf128;"}
-_SYMBOL_PENDING=${_SYMBOL_PENDING:-"&#xf254;"}
-_SYMBOL_ERROR=${_SYMBOL_ERROR:-"&#xf00d;"}
-_SYMBOL_ALERT=${_SYMBOL_ALERT:-"&#xf071;"}
-_SYMBOL_BATT_100=${_SYMBOL_BATT_100:-"&#xf240;"}
-_SYMBOL_BATT_75=${_SYMBOL_BATT_75:-"&#xf241;"}
-_SYMBOL_BATT_50=${_SYMBOL_BATT_50:-"&#xf242;"}
-_SYMBOL_BATT_25=${_SYMBOL_BATT_25:-"&#xf243;"}
-_SYMBOL_BATT_0=${_SYMBOL_BATT_0:-"&#xf244;"}
-_SYMBOL_DIRECTION_UP=${_SYMBOL_DIRECTION_UP:-"&#8593;"}
-_SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"&#8595;"}
+if ! $_SUPPRESS_SYMBOLS; then
+    _SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
+    _SYMBOL_CHARGING=${_SYMBOL_CHARGING:-"&#xf0e7;"}
+    _SYMBOL_DISCHARGING=${_SYMBOL_DISCHARGING:-""}
+    _SYMBOL_UNKNOWN=${_SYMBOL_UNKNOWN:-"&#xf128;"}
+    _SYMBOL_PENDING=${_SYMBOL_PENDING:-"&#xf254;"}
+    _SYMBOL_ERROR=${_SYMBOL_ERROR:-"&#xf00d;"}
+    _SYMBOL_ALERT=${_SYMBOL_ALERT:-"&#xf071;"}
+    _SYMBOL_BATT_100=${_SYMBOL_BATT_100:-"&#xf240;"}
+    _SYMBOL_BATT_75=${_SYMBOL_BATT_75:-"&#xf241;"}
+    _SYMBOL_BATT_50=${_SYMBOL_BATT_50:-"&#xf242;"}
+    _SYMBOL_BATT_25=${_SYMBOL_BATT_25:-"&#xf243;"}
+    _SYMBOL_BATT_0=${_SYMBOL_BATT_0:-"&#xf244;"}
+    _SYMBOL_DIRECTION_UP=${_SYMBOL_DIRECTION_UP:-"&#8593;"}
+    _SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"&#8595;"}
+fi
 
 # Get a the system's temporary files directory.
 #
@@ -647,6 +652,7 @@ Options:
   -Q <symbol>\t\tsymbol for a battery 25% charged
   -r\t\t\thide the battery time remaining
   -R <symbol>\t\tsymbol to indicate the battery state is undefined
+  -s\t\t\tsuppress symbols
   -S <symbol>\t\tsymbol to indicate battery is fully charged
   -t <seconds>\t\tminimum time in seconds between notifications to prevent spam
   -T <symbol>\t\tsymbol to indicate the battery is charging
@@ -669,7 +675,7 @@ declare -a short_segments
 __UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BLOCK_INSTANCE:-BAT0}")
 TMP_NOTIFY="$(get_temp_dir)/battery-plus.last_notify"
 
-while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:S:t:T:uU:V:W:X:Y:Z:" o; do
+while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:sS:t:T:uU:V:W:X:Y:Z:" o; do
     case "$o" in
         a) _LOW_ACTION="${OPTARG}" ;;
         A) _COLOR_ALERT="${OPTARG}" ;;
@@ -701,6 +707,7 @@ while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:S:t:T:uU:V
         Q) _SYMBOL_BATT_25="${OPTARG}" ;;
         r) _HIDE_TIME_REMAINING=true ;;
         R) _SYMBOL_ERROR="${OPTARG}" ;;
+        s) _SUPPRESS_SYMBOLS=true ;;
         S) _SYMBOL_FULLY_CHARGED="${OPTARG}" ;;
         t) _NOTIFY_THROTTLE="${OPTARG}" ;;
         T) _SYMBOL_CHARGING="${OPTARG}" ;;
