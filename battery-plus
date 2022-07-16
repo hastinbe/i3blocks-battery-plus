@@ -682,7 +682,6 @@ while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:S:t:T:uU:V
         E) _COLOR_ERROR="${OPTARG}" ;;
         F) _COLOR_FULLY_CHARGED="${OPTARG}" ;;
         G) _USE_BATT_GRADIENT=true ;;
-        h | *) usage ;;
         H) _HIDE_IF_CHARGED=true ;;
         i) _COLOR_GRADIENT_START="${OPTARG}" ;;
         I) _SYMBOLS_ONLY=true ;;
@@ -712,6 +711,7 @@ while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:S:t:T:uU:V
         X) _SYMBOL_PENDING="${OPTARG}" ;;
         Y) _SYMBOL_DISCHARGING="${OPTARG}" ;;
         Z) _SYMBOL_DIRECTION_DOWN="${OPTARG}" ;;
+        h | *) usage ;;
     esac
 done
 shift $((OPTIND-1)) # Shift off options and optional --
