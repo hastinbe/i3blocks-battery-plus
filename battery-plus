@@ -216,7 +216,7 @@ max() {
 }
 
 clamp() {
-    echo $(min $(max "$1" "$2") "$3")
+    min $(max "$1" "$2") "$3"
 }
 
 # Retrieve an item from the provided lookup table based on the percentage of a number
@@ -327,7 +327,7 @@ get_battery_status_symbol() {
 #   The color to use for the given battery percentage.
 get_percentage_color() {
     local colors=( $(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8) )
-    echo $(plookup "$1" 100 ${colors[@]})
+    plookup "$1" 100 ${colors[@]}
 }
 
 # Determines whether or not we can send a notification.
@@ -351,7 +351,7 @@ can_notify() {
 #   Time in seconds since the Epoch.
 get_last_notify_time() {
     if [ -f "$TMP_NOTIFY" ]; then
-        echo "$(stat -c '%Y' "$TMP_NOTIFY")"
+        stat -c '%Y' "$TMP_NOTIFY"
     fi
 }
 
@@ -445,7 +445,7 @@ display_batt_unknown() {
         echo -n "$(span "$_SYMBOL_UNKNOWN") "
     fi
 
-    echo "$(get_battery_charge_symbol 0)"
+    get_battery_charge_symbol 0
 }
 
 # Display the battery error indicator.
@@ -453,7 +453,7 @@ display_batt_unknown() {
 # Returns:
 #   The battery error indicator.
 display_batt_error() {
-    echo "$(span -c "${_COLOR_ERROR}" "$_SYMBOL_ERROR" "$_SYMBOL_BATT_0")"
+    span -c "${_COLOR_ERROR}" "$_SYMBOL_ERROR" "$_SYMBOL_BATT_0"
 }
 
 # Display the battery percentage.
@@ -548,9 +548,9 @@ multicolor() {
     fi
 
     if [ -n "$color" ]; then
-        echo "$(span -c "$color" "$1")"
+        span -c "$color" "$1"
     else
-        echo "$(span "$1")"
+        span "$1"
     fi
 }
 
