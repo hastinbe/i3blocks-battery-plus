@@ -149,9 +149,9 @@ span() {
 # Arguments:
 #   $1 - An associative array of attribute-value pairs
 build_attribs() {
-    local -n array=$1
-    for k in "${!array[@]}"; do
-        echo -n " $k='${array[$k]}'"
+    local -n attrs=$1
+    for key in "${!attrs[@]}"; do
+        echo -n " $key='${attrs[$key]}'"
     done
     echo
 }
@@ -163,11 +163,7 @@ build_attribs() {
 #   $2 - Color to interpolate to, as a hex triplet prefixed with #
 #   $3 - Amount of steps needed to get from start to end color
 interpolate_rgb() {
-    local -i steps=$3
-    local -a colors
-    local color1=$1
-    local color2=$2
-    local reversed=false
+    local steps=$3 colors=() color1=$1 color2=$2 reversed=false
 
     if (( 0x${color1:1:5} > 0x${color2:1:5} )); then
         color1=$2
@@ -175,56 +171,67 @@ interpolate_rgb() {
         reversed=true
     fi
 
-    printf -v startR "%d" "0x${color1:1:2}"
-    printf -v startG "%d" "0x${color1:3:2}"
-    printf -v startB "%d" "0x${color1:5:2}"
-    printf -v endR "%d" "0x${color2:1:2}"
-    printf -v endG "%d" "0x${color2:3:2}"
-    printf -v endB "%d" "0x${color2:5:2}"
+    local startR=$(( 16#${color1:1:2} ))
+    local startG=$(( 16#${color1:3:2} ))
+    local startB=$(( 16#${color1:5:2} ))
+    local endR=$(( 16#${color2:1:2} ))
+    local endG=$(( 16#${color2:3:2} ))
+    local endB=$(( 16#${color2:5:2} ))
 
-    stepR=$(( (endR - startR) / steps ))
-    stepG=$(( (endG - startG) / steps ))
-    stepB=$(( (endB - startB) / steps ))
+    local stepR=$(( (endR - startR) / steps ))
+    local stepG=$(( (endG - startG) / steps ))
+    local stepB=$(( (endB - startB) / steps ))
 
-for i in $(seq 0 "$steps"); do
+    for i in $(seq 0 "$steps"); do
         local -i R=$(( startR + (stepR * i) ))
         local -i G=$(( startG + (stepG * i) ))
         local -i B=$(( startB + (stepB * i) ))
 
         colors+=( "$(printf "#%02x%02x%02x\n" $R $G $B)" )
     done
+
     colors+=( "$(printf "#%02x%02x%02x\n" "$endR" "$endG" "$endB")" )
 
     if $reversed; then
-        reverse colors colors_reversed
-        # shellcheck disable=SC2154
-        echo "${colors_reversed[@]}"
-    else
-        echo "${colors[@]}"
+        reverse colors
     fi
+
+    echo "${colors[@]}"
 }
 
 # Reverse an array
 #
 # Arguments:
 #   $1 - Array to reverse
-#   $2 - Destination array
 reverse() {
-    local -n arr="$1" rev="$2"
-    for i in "${arr[@]}"
-    do
-        rev=("$i" "${rev[@]}")
+    local -n arr="$1"
+    local tmp
+    for ((i=0, j=${#arr[@]}-1; i<j; i++, j--)); do
+        tmp="${arr[i]}"
+        arr[i]="${arr[j]}"
+        arr[j]="$tmp"
     done
 }
 
+# Returns the minimum of two numbers
 min() {
-    echo "if ($1 < $2) $1 else $2" | bc
+    if (($1 < $2)); then
+        echo "$1"
+    else
+        echo "$2"
+    fi
 }
 
+# Returns the maximum of two numbers
 max() {
-    echo "if ($1 > $2) $1 else $2" | bc
+    if (($1 > $2)); then
+        echo "$1"
+    else
+        echo "$2"
+    fi
 }
 
+# Clamps a value between a minimum and maximum
 clamp() {
     min "$(max "$1" "$2")" "$3"
 }
@@ -244,11 +251,9 @@ plookup() {
     IFS=' ' read -ra table <<< "${@:3}"
 
     local number1
-    local number2=${2%.*}
+    number1=$(min "${1%.*}" "${2%.*}")
 
-    number1=$(min "${1%.*}" "$number2")
-
-    local percent_max=$(( number1 * number2 / 100 ))
+    local percent_max=$(( number1 * ${2%.*} / 100 ))
     local index=$(( percent_max * ${#table[@]} / 100 ))
 
     index=$(clamp $index 0 $(( ${#table[@]} - 1 )) )
@@ -261,7 +266,7 @@ plookup() {
 # Returns:
 #   The battery's status or state.
 get_battery_status() {
-    echo "$__UPOWER_INFO" | awk -W posix '$1 == "state:" {print $2}'
+    awk '/state:/ {print $2}' <<< "$__UPOWER_INFO"
 }
 
 # Get battery warning level.
@@ -269,7 +274,7 @@ get_battery_status() {
 # Returns:
 #   The battery's warning level.
 get_battery_warning_level() {
-    echo "$__UPOWER_INFO" | awk -W posix '$1 == "warning-level:" {print $2}'
+    awk '/warning-level:/ {print $2}' <<< "$__UPOWER_INFO"
 }
 
 # Get battery percentage.
@@ -277,7 +282,7 @@ get_battery_warning_level() {
 # Returns:
 #   The battery's percentage, without the %.
 get_battery_percent() {
-    echo "$__UPOWER_INFO" | awk -W posix '$1 == "percentage:" { gsub("%","",$2); print $2}'
+    awk '/percentage:/ {print gensub(/%/,"","g",$NF)}' <<< "$__UPOWER_INFO"
 }
 
 # Get battery capacity.
@@ -285,7 +290,7 @@ get_battery_percent() {
 # Returns:
 #   The battery's capcity, without the %.
 get_battery_capacity() {
-    echo "$__UPOWER_INFO" | awk -W posix '$1 == "capacity:" { gsub("%","",$2); print $2}'
+    awk '/capacity:/ {printf "%.0f", $2}' <<< "$__UPOWER_INFO"
 }
 
 # Get battery time left.
@@ -293,7 +298,7 @@ get_battery_capacity() {
 # Returns:
 #   The battery's time left.
 get_time_to_empty() {
-    echo "$__UPOWER_INFO" | awk -W posix -F':' '/time to empty:/{print $2}' | xargs
+    awk -W posix -F':' '/time to empty:/{sub(/^[ \t]+/, "", $2); print $2}' <<< "$__UPOWER_INFO" | xargs
 }
 
 # Get the time remaining until the battery is fully charged.
@@ -301,7 +306,7 @@ get_time_to_empty() {
 # Returns:
 #   The time remaining until battery is fully charged.
 get_time_to_full() {
-    echo "$__UPOWER_INFO" | awk -W posix -F':' '/time to full:/{print $2}' | xargs
+    awk -W posix -F':' '/time to full:/{sub(/^[ \t]+/, "", $2); print $2}' <<< "$__UPOWER_INFO" | xargs
 }
 
 # Get symbol for the given battery percentage.
@@ -312,17 +317,13 @@ get_time_to_full() {
 # Returns:
 #  The battery symbol.
 get_battery_charge_symbol() {
-    local percent="$1"
-    local symbol
-
-    if (( percent >= 90 )); then symbol="$_SYMBOL_BATT_100"
-    elif (( percent >= 70 )); then symbol="$_SYMBOL_BATT_75"
-    elif (( percent >= 40 )); then symbol="$_SYMBOL_BATT_50"
-    elif (( percent >= 20 )); then symbol="$_SYMBOL_BATT_25"
-    else symbol="$_SYMBOL_BATT_0"
-    fi
-
-    echo "$symbol"
+    case "$1" in
+        [9][0-9]|100) echo "$_SYMBOL_BATT_100" ;;
+        [7-8][0-9]) echo "$_SYMBOL_BATT_75" ;;
+        [4-6][0-9]) echo "$_SYMBOL_BATT_50" ;;
+        [2-3][0-9]) echo "$_SYMBOL_BATT_25" ;;
+        *) echo "$_SYMBOL_BATT_0" ;;
+    esac
 }
 
 # Get battery status symbol.
@@ -330,7 +331,7 @@ get_battery_charge_symbol() {
 # Returns:
 #   An symbol name, following the Symbol Naming Specification
 get_battery_status_symbol() {
-    echo "$__UPOWER_INFO" | awk -W posix '$1 == "symbol-name:" {print $2}'
+    awk '$1 == "symbol-name:" {print $2}' <<< "$__UPOWER_INFO"
 }
 
 # Get color for the given battery percentage.
@@ -542,7 +543,7 @@ display_segments() {
 
     for segment in "${segments[@]}"; do
         if not_empty "$segment"; then
-            echo -n "$segment"
+            printf '%s' "$segment"
         fi
     done
 
