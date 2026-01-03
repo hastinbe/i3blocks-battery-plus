@@ -2,7 +2,7 @@
 #
 #  battery-plus
 #
-#  An enhanced battery status indicator for i3blocks.
+#  An enhanced battery status indicator for i3blocks and polybar.
 #
 #  Requires:
 #    awk (POSIX compatible)
@@ -22,7 +22,18 @@
 #  Author: Beau Hastings <beau@saweet.net>
 #  URL: https://github.com/hastinbe/i3blocks-battery-plus
 
-_PERCENT="&#x25;"
+# Detect if running in polybar mode
+_POLYBAR_MODE=false
+if [ -n "$POLYBAR_CLICK" ] || [ -n "$POLYBAR_BAR" ] || [ "${POLYBAR_MODE:-false}" = "true" ]; then
+    _POLYBAR_MODE=true
+fi
+
+# Convert HTML entities to Unicode for polybar
+if $_POLYBAR_MODE; then
+    _PERCENT="%"
+else
+    _PERCENT="&#x25;"
+fi
 
 # Hide the battery status if fully-charged,
 _HIDE_IF_CHARGED=${_HIDE_IF_CHARGED:-false}
@@ -82,22 +93,80 @@ _COLOR_DIRECTIONAL_DOWN=${_COLOR_DIRECTIONAL_DOWN:-"red"}
 _COLOR_GRADIENT_START=${_COLOR_GRADIENT_START:-"#FF0000"}
 _COLOR_GRADIENT_END=${_COLOR_GRADIENT_END:-"#00FF00"}
 
+# Convert HTML entity to Unicode
+convert_html_entity() {
+    if $_POLYBAR_MODE; then
+        case "$1" in
+            "&#x25;") echo "%" ;;
+            "&#xf0e7;") echo "⚡" ;;
+            "&#xf128;") echo "?" ;;
+            "&#xf254;") echo "⏳" ;;
+            "&#xf00d;") echo "✕" ;;
+            "&#xf071;") echo "⚠" ;;
+            "&#xf240;") echo "█" ;;
+            "&#xf241;") echo "▉" ;;
+            "&#xf242;") echo "▊" ;;
+            "&#xf243;") echo "▋" ;;
+            "&#xf244;") echo "▌" ;;
+            "&#8593;") echo "↑" ;;
+            "&#8595;") echo "↓" ;;
+            *) echo "$1" ;;
+        esac
+    else
+        echo "$1"
+    fi
+}
+
 # Symbols
 if ! $_SUPPRESS_SYMBOLS; then
-    _SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
-    _SYMBOL_CHARGING=${_SYMBOL_CHARGING:-"&#xf0e7;"}
-    _SYMBOL_DISCHARGING=${_SYMBOL_DISCHARGING:-""}
-    _SYMBOL_UNKNOWN=${_SYMBOL_UNKNOWN:-"&#xf128;"}
-    _SYMBOL_PENDING=${_SYMBOL_PENDING:-"&#xf254;"}
-    _SYMBOL_ERROR=${_SYMBOL_ERROR:-"&#xf00d;"}
-    _SYMBOL_ALERT=${_SYMBOL_ALERT:-"&#xf071;"}
-    _SYMBOL_BATT_100=${_SYMBOL_BATT_100:-"&#xf240;"}
-    _SYMBOL_BATT_75=${_SYMBOL_BATT_75:-"&#xf241;"}
-    _SYMBOL_BATT_50=${_SYMBOL_BATT_50:-"&#xf242;"}
-    _SYMBOL_BATT_25=${_SYMBOL_BATT_25:-"&#xf243;"}
-    _SYMBOL_BATT_0=${_SYMBOL_BATT_0:-"&#xf244;"}
-    _SYMBOL_DIRECTION_UP=${_SYMBOL_DIRECTION_UP:-"&#8593;"}
-    _SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"&#8595;"}
+    if $_POLYBAR_MODE; then
+        # Polybar: use Unicode characters
+        _SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
+        _SYMBOL_CHARGING=${_SYMBOL_CHARGING:-"⚡"}
+        _SYMBOL_DISCHARGING=${_SYMBOL_DISCHARGING:-""}
+        _SYMBOL_UNKNOWN=${_SYMBOL_UNKNOWN:-"?"}
+        _SYMBOL_PENDING=${_SYMBOL_PENDING:-"⏳"}
+        _SYMBOL_ERROR=${_SYMBOL_ERROR:-"✕"}
+        _SYMBOL_ALERT=${_SYMBOL_ALERT:-"⚠"}
+        _SYMBOL_BATT_100=${_SYMBOL_BATT_100:-"█"}
+        _SYMBOL_BATT_75=${_SYMBOL_BATT_75:-"▉"}
+        _SYMBOL_BATT_50=${_SYMBOL_BATT_50:-"▊"}
+        _SYMBOL_BATT_25=${_SYMBOL_BATT_25:-"▋"}
+        _SYMBOL_BATT_0=${_SYMBOL_BATT_0:-"▌"}
+        _SYMBOL_DIRECTION_UP=${_SYMBOL_DIRECTION_UP:-"↑"}
+        _SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"↓"}
+    else
+        # i3blocks: use HTML entities
+        _SYMBOL_FULLY_CHARGED=${_SYMBOL_FULLY_CHARGED:-""}
+        _SYMBOL_CHARGING=${_SYMBOL_CHARGING:-"&#xf0e7;"}
+        _SYMBOL_DISCHARGING=${_SYMBOL_DISCHARGING:-""}
+        _SYMBOL_UNKNOWN=${_SYMBOL_UNKNOWN:-"&#xf128;"}
+        _SYMBOL_PENDING=${_SYMBOL_PENDING:-"&#xf254;"}
+        _SYMBOL_ERROR=${_SYMBOL_ERROR:-"&#xf00d;"}
+        _SYMBOL_ALERT=${_SYMBOL_ALERT:-"&#xf071;"}
+        _SYMBOL_BATT_100=${_SYMBOL_BATT_100:-"&#xf240;"}
+        _SYMBOL_BATT_75=${_SYMBOL_BATT_75:-"&#xf241;"}
+        _SYMBOL_BATT_50=${_SYMBOL_BATT_50:-"&#xf242;"}
+        _SYMBOL_BATT_25=${_SYMBOL_BATT_25:-"&#xf243;"}
+        _SYMBOL_BATT_0=${_SYMBOL_BATT_0:-"&#xf244;"}
+        _SYMBOL_DIRECTION_UP=${_SYMBOL_DIRECTION_UP:-"&#8593;"}
+        _SYMBOL_DIRECTION_DOWN=${_SYMBOL_DIRECTION_DOWN:-"&#8595;"}
+    fi
+    # Convert any HTML entities that were explicitly set
+    _SYMBOL_FULLY_CHARGED=$(convert_html_entity "$_SYMBOL_FULLY_CHARGED")
+    _SYMBOL_CHARGING=$(convert_html_entity "$_SYMBOL_CHARGING")
+    _SYMBOL_DISCHARGING=$(convert_html_entity "$_SYMBOL_DISCHARGING")
+    _SYMBOL_UNKNOWN=$(convert_html_entity "$_SYMBOL_UNKNOWN")
+    _SYMBOL_PENDING=$(convert_html_entity "$_SYMBOL_PENDING")
+    _SYMBOL_ERROR=$(convert_html_entity "$_SYMBOL_ERROR")
+    _SYMBOL_ALERT=$(convert_html_entity "$_SYMBOL_ALERT")
+    _SYMBOL_BATT_100=$(convert_html_entity "$_SYMBOL_BATT_100")
+    _SYMBOL_BATT_75=$(convert_html_entity "$_SYMBOL_BATT_75")
+    _SYMBOL_BATT_50=$(convert_html_entity "$_SYMBOL_BATT_50")
+    _SYMBOL_BATT_25=$(convert_html_entity "$_SYMBOL_BATT_25")
+    _SYMBOL_BATT_0=$(convert_html_entity "$_SYMBOL_BATT_0")
+    _SYMBOL_DIRECTION_UP=$(convert_html_entity "$_SYMBOL_DIRECTION_UP")
+    _SYMBOL_DIRECTION_DOWN=$(convert_html_entity "$_SYMBOL_DIRECTION_DOWN")
 fi
 
 empty() {
@@ -120,7 +189,23 @@ get_temp_dir() {
     dirname "$(mktemp -ut "battery-plus.XXX")"
 }
 
-# Output text wrapped in a span element
+# Convert color name to hex code
+color_to_hex() {
+    case "$1" in
+        black) echo "#000000" ;;
+        white) echo "#FFFFFF" ;;
+        red) echo "#FF0000" ;;
+        green) echo "#00FF00" ;;
+        blue) echo "#0000FF" ;;
+        yellow) echo "#FFFF00" ;;
+        orange) echo "#FFA500" ;;
+        cyan) echo "#00FFFF" ;;
+        magenta) echo "#FF00FF" ;;
+        *) echo "$1" ;;  # Assume it's already a hex code
+    esac
+}
+
+# Output text wrapped in a span element (i3blocks) or polybar format
 #
 # Options:
 #   -c <color>  To specify a text color
@@ -130,18 +215,30 @@ get_temp_dir() {
 span() {
     local -A attribs
     local text="$*"
+    local color=""
 
     if not_empty "$FONT"; then attribs[font]="$FONT"; fi
 
     if [ "$1" = "-c" ]; then
         if not_empty "$2"; then
-            # shellcheck disable=SC2034
-            attribs[color]="$2"
+            color="$2"
         fi
         text="${*:3}"
     fi
 
-    echo "<span$(build_attribs attribs)>$text</span>"
+    if $_POLYBAR_MODE; then
+        if not_empty "$color"; then
+            local hex_color=$(color_to_hex "$color")
+            echo "%{F$hex_color}$text%{F-}"
+        else
+            echo "$text"
+        fi
+    else
+        # i3blocks mode - use HTML spans
+        if not_empty "$FONT"; then attribs[font]="$FONT"; fi
+        if not_empty "$color"; then attribs[color]="$color"; fi
+        echo "<span$(build_attribs attribs)>$text</span>"
+    fi
 }
 
 # Builds html element attributes
@@ -215,6 +312,19 @@ reverse() {
 
 # Returns the minimum of two numbers
 min() {
+    # Handle empty values
+    if empty "$1" && empty "$2"; then
+        echo "0"
+        return
+    fi
+    if empty "$1"; then
+        echo "$2"
+        return
+    fi
+    if empty "$2"; then
+        echo "$1"
+        return
+    fi
     if (($1 < $2)); then
         echo "$1"
     else
@@ -224,6 +334,19 @@ min() {
 
 # Returns the maximum of two numbers
 max() {
+    # Handle empty values
+    if empty "$1" && empty "$2"; then
+        echo "0"
+        return
+    fi
+    if empty "$1"; then
+        echo "$2"
+        return
+    fi
+    if empty "$2"; then
+        echo "$1"
+        return
+    fi
     if (($1 > $2)); then
         echo "$1"
     else
@@ -243,7 +366,7 @@ clamp() {
 #   $2 - Number to get a percentage of
 #   $3 - An array of potential values
 plookup() {
-    if empty "$2" || empty "$3"; then
+    if empty "$2" || empty "$3" || empty "$1"; then
         return
     fi
 
@@ -252,6 +375,11 @@ plookup() {
 
     local number1
     number1=$(min "${1%.*}" "${2%.*}")
+
+    # Ensure number1 is numeric
+    if empty "$number1" || ! [[ "$number1" =~ ^[0-9]+$ ]]; then
+        return
+    fi
 
     local percent_max=$(( number1 * ${2%.*} / 100 ))
     local index=$(( percent_max * ${#table[@]} / 100 ))
@@ -342,6 +470,9 @@ get_battery_status_symbol() {
 # Returns:
 #   The color to use for the given battery percentage.
 get_percentage_color() {
+    if empty "$1"; then
+        return
+    fi
     local colors
     read -ra colors <<< "$(interpolate_rgb "$_COLOR_GRADIENT_START" "$_COLOR_GRADIENT_END" 8)"
     plookup "$1" 100 "${colors[@]}"
@@ -639,7 +770,7 @@ dialog() {
 # Display program usage.
 usage() {
     echo -e "Usage: $0 [options]
-Display the battery status using upower for i3blocks.\n
+Display the battery status using upower for i3blocks and polybar.\n
 Options:
   -a <none|notify>\taction to take when battery is low
   -A <color>\t\tcolor of the alert symbol
@@ -693,7 +824,6 @@ Options:
 declare -a long_segments
 declare -a short_segments
 
-__UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BLOCK_INSTANCE:-BAT0}")
 TMP_NOTIFY="$(get_temp_dir)/battery-plus.last_notify"
 
 while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:sS:t:T:uU:V:W:X:Y:Z:" o; do
@@ -744,9 +874,31 @@ while getopts "a:A:B:c:C:dD:e:E:F:GhHi:Ij:J:kK:l:L:M:n:N:o:O:p:P:Q:rR:sS:t:T:uU:
 done
 shift $((OPTIND-1)) # Shift off options and optional --
 
+# Get battery instance - support both i3blocks and polybar
+# This must be done AFTER getopts so $1 refers to the positional argument
+if $_POLYBAR_MODE; then
+    # Polybar: use POLYBAR_BATTERY or command line arg, default to BAT0
+    BATTERY_INSTANCE=${POLYBAR_BATTERY:-${1:-BAT0}}
+else
+    # i3blocks: use BLOCK_INSTANCE
+    BATTERY_INSTANCE=${BLOCK_INSTANCE:-BAT0}
+fi
+
+__UPOWER_INFO=$(upower --show-info "/org/freedesktop/UPower/devices/battery_${BATTERY_INSTANCE}")
+
 battery_percentage=$(get_battery_percent)
+# Ensure battery_percentage is numeric or empty
+if not_empty "$battery_percentage" && ! [[ "$battery_percentage" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    battery_percentage=""
+fi
+
 percentage_color=$(get_percentage_color "$battery_percentage")
 capacity=$(get_battery_capacity)
+# Ensure capacity is numeric or empty
+if not_empty "$capacity" && ! [[ "$capacity" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    capacity=""
+fi
+
 battery_charge_symbol=$(get_battery_charge_symbol "$battery_percentage")
 battery_status_symbol=$(get_battery_status_symbol)
 colored_battery_symbol=$(multicolor "$battery_charge_symbol" "$_COLOR_BATTERY" "$percentage_color" $_USE_BATT_GRADIENT)
@@ -767,7 +919,7 @@ case "$warning_level" in
 esac
 
 # Displayable alerts
-if (( _CAPACITY_ALERT > 0 && "${capacity%.*}" <= _CAPACITY_ALERT )); then
+if not_empty "$capacity" && (( _CAPACITY_ALERT > 0 && "${capacity%.*}" <= _CAPACITY_ALERT )); then
     CAPACITY_TRIGGERED=true
     long_segments+=( "$(span -c "$_COLOR_ALERT" "$_SYMBOL_ALERT") " )
 fi
@@ -785,7 +937,7 @@ case "$status" in
         long_segments+=( "$(display_batt_fully_charged)" )
         ;;
     pending-charge)
-        if $_HIDE_IF_CHARGED && (( battery_percentage >= _HIDE_OVER_PERCENTAGE )); then
+        if $_HIDE_IF_CHARGED && not_empty "$battery_percentage" && (( battery_percentage >= _HIDE_OVER_PERCENTAGE )); then
             exit 0
         fi
         long_segments+=( "$(display_batt_pending_charge)" )
@@ -807,26 +959,48 @@ if not_empty "$(display_time_to_full)"; then
     long_segments+=( "($(display_time_to_full))" )
 fi
 
-# Display the block long_text
-display_segments "${long_segments[@]}"
-
-# Display the block short_text
-display_segments "${short_segments[@]}"
+# Display output
+if $_POLYBAR_MODE; then
+    # Polybar: output single line
+    display_segments "${long_segments[@]}"
+else
+    # i3blocks: output long and short text
+    display_segments "${long_segments[@]}"
+    display_segments "${short_segments[@]}"
+fi
 
 # Handle click events
-case $BLOCK_BUTTON in
-    1)
-        if not_empty "$CAPACITY_TRIGGERED"; then
-            dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap"
-        else
-            if [ "$status" = "discharging" ]; then
-                notify "$(span "$(display_time_remaining true) remaining")" "alarm-symbolic" "normal" true "-c device"
-            elif [ "$status" = "charging" ]; then
-                notify "$(span "$(display_time_to_full true) until fully charged")" "alarm-symbolic" "normal" true "-c device"
+if $_POLYBAR_MODE; then
+    # Polybar click handling
+    case "$POLYBAR_CLICK" in
+        1)
+            if not_empty "$CAPACITY_TRIGGERED"; then
+                dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap"
+            else
+                if [ "$status" = "discharging" ]; then
+                    notify "$(span "$(display_time_remaining true) remaining")" "alarm-symbolic" "normal" true "-c device"
+                elif [ "$status" = "charging" ]; then
+                    notify "$(span "$(display_time_to_full true) until fully charged")" "alarm-symbolic" "normal" true "-c device"
+                fi
             fi
-        fi
-        ;;
-esac
+            ;;
+    esac
+else
+    # i3blocks click handling
+    case $BLOCK_BUTTON in
+        1)
+            if not_empty "$CAPACITY_TRIGGERED"; then
+                dialog "$(span "Your battery capacity has reduced to ${capacity%.*}${_PERCENT}!")" "battery-caution" "warning" "--no-wrap"
+            else
+                if [ "$status" = "discharging" ]; then
+                    notify "$(span "$(display_time_remaining true) remaining")" "alarm-symbolic" "normal" true "-c device"
+                elif [ "$status" = "charging" ]; then
+                    notify "$(span "$(display_time_to_full true) until fully charged")" "alarm-symbolic" "normal" true "-c device"
+                fi
+            fi
+            ;;
+    esac
+fi
 
 if not_empty "$battery_percentage" && (( battery_percentage <= 5 )); then
     exit 33

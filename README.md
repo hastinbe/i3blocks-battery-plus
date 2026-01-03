@@ -2,7 +2,7 @@ battery-plus
 =========
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)][license]
 
-An enhanced battery status indicator for [i3blocks].
+An enhanced battery status indicator for [i3blocks] and [polybar].
 
 ![](example.png)
 
@@ -11,7 +11,7 @@ An enhanced battery status indicator for [i3blocks].
 #### Requirements
 * awk (POSIX compatible)
 * bc
-* [i3blocks]
+* [i3blocks] or [polybar]
 * [upower]
 
 #### Recommended
@@ -74,6 +74,28 @@ interval=30
 ```
 
 Set the `instance` variable to your battery to monitor. If you want to monitor multiple batteries you will need to add this blocklet twice in your i3blocks.conf with different `instance` settings.
+
+### Polybar Setup
+
+To use with [polybar], add the following to your polybar configuration:
+
+```INI
+[module/battery-plus]
+type = custom/script
+exec = POLYBAR_MODE=true ~/.config/polybar/scripts/battery-plus BAT0
+interval = 30
+click-left = POLYBAR_MODE=true POLYBAR_CLICK=1 ~/.config/polybar/scripts/battery-plus BAT0
+```
+
+Replace `BAT0` with your battery device name if different. See `polybar.conf.example` for a complete example with customization options.
+
+**Note:** When using with polybar, set `POLYBAR_MODE=true` as an environment variable. The script will automatically:
+- Convert HTML entities to Unicode characters
+- Use polybar's format tags (`%{F#color}`) instead of HTML spans
+- Output a single line instead of long/short text
+- Handle click events via `POLYBAR_CLICK` environment variable
+
+For polybar, colors should be specified as hex codes (e.g., `#FFFF00` for yellow) rather than color names.
 
 #### Notifications
 Notifications are provided by [libnotify]. Any [libnotify] compatible notification daemon can be used for notifications by specifying it with the `-n` option or the `NOTIFY_PROGRAM` variable. The most common are provided by [notify-osd] and [dunst].
@@ -138,5 +160,6 @@ Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 [libnotify]: https://developer.gnome.org/libnotify
 [license]: https://www.gnu.org/licenses/gpl-2.0.en.html
 [notify-osd]: https://launchpad.net/notify-osd
+[polybar]: https://github.com/polybar/polybar
 [upower]: https://upower.freedesktop.org
 [zenity]: https://wiki.gnome.org/Projects/Zenity

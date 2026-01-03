@@ -1,0 +1,41 @@
+[module/battery-plus]
+type = custom/script
+exec = POLYBAR_MODE=true ~/.config/polybar/scripts/battery-plus BAT0
+interval = 30
+click-left = POLYBAR_MODE=true POLYBAR_CLICK=1 ~/.config/polybar/scripts/battery-plus BAT0
+
+; Optional: You can customize colors and symbols using environment variables
+; exec = POLYBAR_MODE=true _COLOR_CHARGING=#FFFF00 _COLOR_DISCHARGING=#FFFFFF ~/.config/polybar/scripts/battery-plus BAT0
+
+; Available customization options (set as environment variables):
+; _HIDE_IF_CHARGED=false
+; _USE_BATT_GRADIENT=false
+; _SYMBOLS_ONLY=false
+; _SUPPRESS_SYMBOLS=false
+; _HIDE_PERCENTAGE=false
+; _HIDE_TIME_REMAINING=true
+; _HIDE_TIME_TO_FULL=true
+; _SHOW_CHARGE_DIRECTION=true
+; _CAPACITY_ALERT=75
+; _CRITICAL_ACTION=notify
+; _LOW_ACTION=notify
+; _NOTIFY_PROGRAM=notify-send
+; _COLOR_CHARGING=#FFFF00
+; _COLOR_DISCHARGING=#FFFFFF
+; _COLOR_PENDING=#0000FF
+; _COLOR_ERROR=#FF0000
+; _COLOR_BATTERY=#FFFFFF
+; _COLOR_ALERT=#FFA500
+; _COLOR_DIRECTIONAL_UP=#00FF00
+; _COLOR_DIRECTIONAL_DOWN=#FF0000
+; _COLOR_GRADIENT_START=#FF0000
+; _COLOR_GRADIENT_END=#00FF00
+; _SYMBOL_CHARGING=⚡
+; _SYMBOL_BATT_100=█
+; _SYMBOL_BATT_75=▉
+; _SYMBOL_BATT_50=▊
+; _SYMBOL_BATT_25=▋
+; _SYMBOL_BATT_0=▌
+; _SYMBOL_DIRECTION_UP=↑
+; _SYMBOL_DIRECTION_DOWN=↓
+
